@@ -1,6 +1,6 @@
-import Attempt from "./attempt.model.ts";
-import Test from "../test/test.model.ts";
-import { AppError } from "../../utils/AppError.ts";
+import Attempt from "./attempt.model.js";
+import Test from "../test/test.model.js";
+import { AppError } from "../../utils/AppError.js";
 
 export const submitAttempt = async (
   userId: string,

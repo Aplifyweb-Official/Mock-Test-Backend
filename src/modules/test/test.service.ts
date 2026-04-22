@@ -1,5 +1,5 @@
-import Test from "./test.model.ts";
-import { AppError } from "../../utils/AppError.ts";
+import Test from "./test.model.js";
+import { AppError } from "../../utils/AppError.js";
 
 export const createTest = async (data: any) => {
   const test = await Test.create(data);

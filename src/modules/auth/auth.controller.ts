@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { registerUser, loginUser } from "./auth.service.ts";
-import { asyncHandler } from "../../utils/asyncHandler.ts";
+import { registerUser, loginUser } from "./auth.service.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 
 export const register = asyncHandler(
   async (req: Request, res: Response) => {

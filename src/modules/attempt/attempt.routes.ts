@@ -1,6 +1,6 @@
 import express from "express";
-import { submitAttemptController } from "./attempt.controller.ts";
-import { protect } from "../../middlewares/auth.middleware.ts";
+import { submitAttemptController } from "./attempt.controller.js";
+import { protect } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 

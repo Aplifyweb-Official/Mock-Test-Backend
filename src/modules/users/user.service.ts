@@ -1,6 +1,6 @@
-import User from "./user.model.ts";
+import User from "./user.model.js";
 import bcrypt from "bcrypt";
-import { AppError } from "../../utils/AppError.ts";
+import { AppError } from "../../utils/AppError.js";
 
 export const createUser = async (data: any) => {
   const hashedPassword = await bcrypt.hash(data.password, 10);

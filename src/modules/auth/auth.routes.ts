@@ -1,9 +1,9 @@
 import express from "express";
-import { register, login } from "./auth.controller.ts";
-import { protect, authorize } from "../../middlewares/auth.middleware.ts";
-import { validate } from "../../middlewares/validate.ts";
-import { registerSchema, loginSchema } from "./auth.validation.ts";
-import { asyncHandler } from "../../utils/asyncHandler.ts";
+import { register, login } from "./auth.controller.js";
+import { protect, authorize } from "../../middlewares/auth.middleware.js";
+import { validate } from "../../middlewares/validate.js";
+import { registerSchema, loginSchema } from "./auth.validation.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 
 const router = express.Router();
 

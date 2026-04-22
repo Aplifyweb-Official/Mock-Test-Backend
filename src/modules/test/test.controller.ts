@@ -3,8 +3,8 @@ import {
   createTest,
   getAllTests,
   getTestById,
-} from "./test.service.ts";
-import { asyncHandler } from "../../utils/asyncHandler.ts";
+} from "./test.service.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 
 export const createTestController = asyncHandler(
   async (req: Request, res: Response) => {

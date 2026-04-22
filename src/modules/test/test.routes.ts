@@ -3,12 +3,12 @@ import {
   createTestController,
   getTestsController,
   getTestController,
-} from "./test.controller.ts";
+} from "./test.controller.js";
 
-import { protect, authorize } from "../../middlewares/auth.middleware.ts";
-import { validate } from "../../middlewares/validate.ts";
-import { testSchema } from "./test.validation.ts";
-import { asyncHandler } from "../../utils/asyncHandler.ts";
+import { protect, authorize } from "../../middlewares/auth.middleware.js";
+import { validate } from "../../middlewares/validate.js";
+import { testSchema } from "./test.validation.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 
 const router = express.Router();
 

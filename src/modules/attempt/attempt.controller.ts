@@ -1,8 +1,9 @@
 import type{ Response } from "express";
-import { submitAttempt } from "./attempt.service.ts";
-import { asyncHandler } from "../../utils/asyncHandler.ts";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { submitAttempt } from "./attempt.service.js";
 
-export const submitAttemptController = asyncHandler(
+
+export const submitAttemptController = asyncHandler (
   async (req: any, res: Response) => {
     const userId = req.user.id;
     const { testId, answers } = req.body;

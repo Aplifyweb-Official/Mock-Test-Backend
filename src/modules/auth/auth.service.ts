@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
-import { createUser, findUserByEmail } from "../users/user.service.ts";
-import { generateToken } from "../../utils/generateToken.ts";
-import { AppError } from "../../utils/AppError.ts";
+import { createUser, findUserByEmail } from "../users/user.service.js";
+import { generateToken } from "../../utils/generateToken.js";
+import { AppError } from "../../utils/AppError.js";
 
 export const registerUser = async (
   name: string,
