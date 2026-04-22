@@ -1,35 +1,40 @@
-import { createTest, getAllTests, getTestById } from "./test.service.ts";
+import type { Request, Response } from "express";
+import {
+  createTest,
+  getAllTests,
+  getTestById,
+} from "./test.service.ts";
+import { asyncHandler } from "../../utils/asyncHandler.ts";
 
-export const createTestController = async (req: any, res: any) => {
-  try {
+export const createTestController = asyncHandler(
+  async (req: Request, res: Response) => {
     const test = await createTest(req.body);
 
     res.status(201).json({
       success: true,
-      test,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
+      data: test,
     });
   }
-};
+);
 
-export const getTestsController = async (req: any, res: any) => {
-  const tests = await getAllTests();
+export const getTestsController = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const tests = await getAllTests();
 
-  res.json({
-    success: true,
-    tests,
-  });
-};
+    res.json({
+      success: true,
+      data: tests,
+    });
+  }
+);
 
-export const getTestController = async (req: any, res: any) => {
-  const test = await getTestById(req.params.id);
+export const getTestController = asyncHandler(
+  async (req: Request<{ id: string }>, res: Response) => {
+    const test = await getTestById(req.params.id);
 
-  res.json({
-    success: true,
-    test,
-  });
-};
+    res.json({
+      success: true,
+      data: test,
+    });
+  }
+);

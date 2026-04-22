@@ -6,7 +6,9 @@ import {
 } from "./test.controller.ts";
 
 import { protect, authorize } from "../../middlewares/auth.middleware.ts";
-import { validateTest } from "./test.validation.ts";
+import { validate } from "../../middlewares/validate.ts";
+import { testSchema } from "./test.validation.ts";
+import { asyncHandler } from "../../utils/asyncHandler.ts";
 
 const router = express.Router();
 
@@ -15,14 +17,14 @@ router.post(
   "/",
   protect,
   authorize("super-admin", "institute"),
-  validateTest,
-  createTestController
+  validate(testSchema),
+  asyncHandler(createTestController)
 );
 
 // 🔓 Get all tests (public)
-router.get("/", getTestsController);
+router.get("/", asyncHandler(getTestsController));
 
 // 🔓 Get single test
-router.get("/:id", getTestController);
+router.get("/:id", asyncHandler(getTestController));
 
 export default router;

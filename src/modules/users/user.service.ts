@@ -1,8 +1,8 @@
 import User from "./user.model.ts";
 import bcrypt from "bcrypt";
+import { AppError } from "../../utils/AppError.ts";
 
 export const createUser = async (data: any) => {
-  // 🔐 hash password
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
   const user = await User.create({
@@ -14,5 +14,17 @@ export const createUser = async (data: any) => {
 };
 
 export const findUserByEmail = async (email: string) => {
-  return User.findOne({ email });
+  const user = await User.findOne({ email });
+
+  return user;
+};
+
+export const findUserById = async (id: string) => {
+  const user = await User.findById(id).select("-password");
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  return user;
 };

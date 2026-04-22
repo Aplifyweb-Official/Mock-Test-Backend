@@ -1,25 +1,22 @@
+import type { Request, Response } from "express";
 import { registerUser, loginUser } from "./auth.service.ts";
+import { asyncHandler } from "../../utils/asyncHandler.ts";
 
-export const register = async (req: any, res: any) => {
-  try {
-    const { name, email, password } = req.body;
+export const register = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { name, email, password , role } = req.body;
 
-    const user = await registerUser(name, email, password);
+    const user = await registerUser(name, email, password ,role);
 
     res.status(201).json({
       success: true,
-      user,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
+      data: user,
     });
   }
-};
+);
 
-export const login = async (req: any, res: any) => {
-  try {
+export const login = asyncHandler(
+  async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     const { user, token } = await loginUser(email, password);
@@ -27,13 +24,10 @@ export const login = async (req: any, res: any) => {
     res.json({
       success: true,
       message: "Login successful",
-      token,
-      user,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
+      data: {
+        user,
+        token,
+      },
     });
   }
-};
+);

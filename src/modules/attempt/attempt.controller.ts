@@ -1,0 +1,20 @@
+import type{ Response } from "express";
+import { submitAttempt } from "./attempt.service.ts";
+import { asyncHandler } from "../../utils/asyncHandler.ts";
+
+export const submitAttemptController = asyncHandler(
+  async (req: any, res: Response) => {
+    const userId = req.user.id;
+    const { testId, answers } = req.body;
+
+    const attempt = await submitAttempt(userId, testId, answers);
+
+    res.json({
+      success: true,
+      message: "Test submitted",
+      data: {
+        score: attempt.score,
+      },
+    });
+  }
+);
