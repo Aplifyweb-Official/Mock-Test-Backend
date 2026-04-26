@@ -21,7 +21,7 @@ export const registerUser = async (
     name,
     email,
     password,
-    role: role || "student", // ✅ allow role
+    role: role || "institute", // ✅ allow role
   });
 
   const userObj = user.toObject();
