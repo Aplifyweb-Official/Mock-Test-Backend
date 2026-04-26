@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
+import { env } from "./env.js";
 
 const connectDB = async (): Promise<void> => {
   try {
-    const mongo
-    URI = process.env.MONGO_URI;
+    const mongoURI = process.env.MONGO_URI;
 
     // 🔒 Validate env
     if (!mongoURI) {
@@ -16,7 +16,6 @@ const connectDB = async (): Promise<void> => {
   } catch (error) {
     console.error("❌ DB connection failed:", (error as Error).message);
 
-    // 🔥 Exit process (important for production)
     process.exit(1);
   }
 };

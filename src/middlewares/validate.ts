@@ -1,16 +1,22 @@
-import { ZodType } from "zod";
 import type { Request, Response, NextFunction } from "express";
+import { ZodSchema } from "zod";
 
 export const validate =
-  (schema: ZodType) =>
-  (req: Request, _res: Response, next: NextFunction) => {
-    try {
-      const parsedData = schema.parse(req.body);
+  (schema: ZodSchema) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.body);
 
-      req.body = parsedData; // ✅ sanitized & validated
-
-      next();
-    } catch (err) {
-      next(err); // handled by global error middleware
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: result.error.issues.map((err) => ({
+          field: err.path.join("."),
+          message: err.message,
+        })),
+      });
     }
+
+    req.body = result.data;
+    next();
   };

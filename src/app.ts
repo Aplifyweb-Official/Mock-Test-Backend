@@ -1,12 +1,12 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import mongoSanitize from "mongo-sanitize";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import attemptRoutes from "./modules/attempt/attempt.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import testRoutes from "./modules/test/test.routes.js";
+import { globalLimiter } from "./middlewares/rateLimiter.js";
 
 
 const app = express();
@@ -19,13 +19,7 @@ const app = express();
 app.use(helmet());
 
 // 2. Rate limiting (global)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(limiter);
+app.use(globalLimiter);
 
 // 3. CORS
 app.use(
