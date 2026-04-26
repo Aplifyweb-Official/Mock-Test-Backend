@@ -1,21 +1,15 @@
-import User from "./user.model.js";
-import bcrypt from "bcrypt";
-import { AppError } from "../../utils/AppError.js";
+import { User } from "./user.model.js"; // ✅ Fix 1: Curly braces lagaye (Named Import)
+import { ApiError } from "../../shared/utils/ApiError.js"; // ✅ Fix 2: Humara custom ApiError use kiya
 
 export const createUser = async (data: any) => {
-  const hashedPassword = await bcrypt.hash(data.password, 10);
-
-  const user = await User.create({
-    ...data,
-    password: hashedPassword,
-  });
-
+  // ✅ Fix 3: bcrypt yahan se hata diya. 
+  // Model ka pre-save hook ab apne aap password hash kar lega.
+  const user = await User.create(data);
   return user;
 };
 
 export const findUserByEmail = async (email: string) => {
   const user = await User.findOne({ email });
-
   return user;
 };
 
@@ -23,7 +17,7 @@ export const findUserById = async (id: string) => {
   const user = await User.findById(id).select("-password");
 
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new ApiError(404, "User not found"); // ✅ ApiError standard layout
   }
 
   return user;

@@ -1,80 +1,63 @@
-import bcrypt from "bcrypt";
-import { createUser, findUserByEmail } from "../users/user.service.js";
-import { generateToken } from "../../utils/generateToken.js";
-import { AppError } from "../../utils/AppError.js";
+import jwt from 'jsonwebtoken';
+import { User } from '../users/user.model.js';
+import { ApiError } from '../../shared/utils/ApiError.js';
+import { ENV } from '../../config/env.config.js';
 
-export const registerUser = async (
-  name: string,
-  email: string,
-  password: string,
-  role?: string
-) => {
-  const existingUser = await findUserByEmail(email);
-  if (role === "super-admin") {
-    throw new AppError("Not allowed to create admin", 403);
-  }
-  if (existingUser) {
-    throw new AppError("User already exists", 400);
+export class AuthService {
+  
+  // ── Helper Function: Token Generator ──
+  private static signToken(userId: string) {
+    return jwt.sign({ id: userId }, ENV.JWT_SECRET, {
+      expiresIn: ENV.JWT_EXPIRES_IN as any, // FIX: TypeScript strictness bypass
+    });
   }
 
-  const user = await createUser({
-    name,
-    email,
-    password,
-    role: role || "student", // ✅ allow role
-  });
+  // ── 1. SIGNUP LOGIC ──
+  static async signup(userData: any) {
+    // Check agar is email se already koi account hai
+    const existingUser = await User.findOne({ email: userData.email });
+    if (existingUser) {
+      throw new ApiError(400, 'Email is already registered! Please login.');
+    }
 
-  const userObj = user.toObject();
-  const { password: _password, ...safeUser } = userObj;
+    // Naya User create karo
+    const newUser = await User.create(userData);
 
-  return safeUser;
-};
-// export const registerUser = async (
-//   name: string,
-//   email: string,
-//   password: string
-// ) => {
-//   const existingUser = await findUserByEmail(email);
+    // FIX: ObjectId ko properly string mein convert kiya
+    const token = this.signToken(newUser._id.toString());
 
-//   if (existingUser) {
-//     throw new AppError("User already exists", 400);
-//   }
+    // Security: Response bhejte waqt password object se hata do
+    newUser.password = undefined;
 
-//   const user = await createUser({
-//     name,
-//     email,
-//     password,
-//   });
-
-//   // 🔐 remove password safely
-//   const userObj = user.toObject();
-//   const { password: _password, ...safeUser } = userObj;
-
-//   return safeUser;
-// };
-
-export const loginUser = async (email: string, password: string) => {
-  const user = await findUserByEmail(email);
-
-  if (!user) {
-    throw new AppError("Invalid email or password", 400);
+    return { user: newUser, token };
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  // ── 2. LOGIN LOGIC ──
+  static async login(email: string, password: string) {
+    // Database me user dhundo
+    const user = await User.findOne({ email }).select('+password');
+    
+    if (!user) {
+      throw new ApiError(401, 'Invalid email or password');
+    }
 
-  if (!isMatch) {
-    throw new AppError("Invalid email or password", 400);
+    // Password check karo
+    const isPasswordCorrect = await user.comparePassword(password);
+    
+    if (!isPasswordCorrect) {
+      throw new ApiError(401, 'Invalid email or password');
+    }
+
+    if (!user.isActive) {
+      throw new ApiError(403, 'Your account has been suspended. Please contact SuperAdmin.');
+    }
+
+    // FIX: ObjectId ko properly string mein convert kiya
+    const token = this.signToken(user._id.toString());
+
+    // Security: Token banne ke baad password response se uda do
+    user.password = undefined;
+
+    return { user, token };
   }
-
-  const token = generateToken(user);
-
-  // 🔐 remove password safely
-  const userObj = user.toObject();
-  const { password: _password, ...safeUser } = userObj;
-
-  return {
-    user: safeUser,
-    token,
-  };
-};
-
+}

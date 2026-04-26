@@ -1,64 +1,40 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import mongoSanitize from "mongo-sanitize";
-import { errorHandler } from "./middlewares/error.middleware.js";
-import attemptRoutes from "./modules/attempt/attempt.routes.js";
-import authRoutes from "./modules/auth/auth.routes.js";
-import testRoutes from "./modules/test/test.routes.js";
-import { globalLimiter } from "./middlewares/rateLimiter.js";
+import express, { Application, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { globalErrorHandler } from './middlewares/error.middleware.js';
+import { authRoutes } from './modules/auth/auth.routes.js';
 
+const app: Application = express();
 
-const app = express();
-
-/**
- * 🔐 SECURITY MIDDLEWARES
- */
-
-// 1. Secure headers
+// ── 1. Global Middlewares ──
 app.use(helmet());
+app.use(cors({ origin: '*', credentials: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(morgan('dev'));
 
-// 2. Rate limiting (global)
-app.use(globalLimiter);
-
-// 3. CORS
-app.use(
-  cors({
-    origin: "*", // ⚠️ change in production
-    credentials: true,
-  })
-);
-
-// 4. Body parser (limit size)
-app.use(express.json({ limit: "10kb" }));
-
-// 5. NoSQL Injection Protection (SAFE VERSION)
-app.use((req, _res, next) => {
-  req.body = mongoSanitize(req.body); // ✅ only body
-  next();
+// ── 2. Health Check API ──
+app.get('/api/v1/health', (req: Request, res: Response) => {
+    res.status(200).json({ success: true, message: 'ExamAI Server is alive and kicking! 🚀' });
 });
 
+// 👇 ========================================================== 👇
+// 🔥 SAHI JAGAH: AUTH ROUTES YAHAN (404 SE UPAR) HONE CHAHIYE 🔥
+console.log("--> Mounting Auth Routes! <--");
+app.use('/api/v1/auth', authRoutes);
+// 👆 ========================================================== 👆
 
-/**
- * 🚀 ROUTES
- */
-app.use("/api/auth", authRoutes);
-app.use("/api/tests", testRoutes);
-app.use("/api/attempts", attemptRoutes);
 
-/**
- * 🧪 HEALTH CHECK
- */
-app.get("/", (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "API is running...",
-  });
+// ── 3. 404 Route Handler (YE HAMESHA ROUTES KE NEECHE HONA CHAHIYE) ──
+app.use((req: Request, res: Response, next: NextFunction) => {
+    res.status(404).json({
+        success: false,
+        message: `Bhaiya naya 404 aa gaya: ${req.originalUrl}` // <-- Ye line add kar
+    });
 });
 
-/**
- * ❌ GLOBAL ERROR HANDLER (ALWAYS LAST)
- */
-app.use(errorHandler);
+// ── 4. Global Error Handler (YE SABSE AAKHRI MEIN HONA CHAHIYE) ──
+app.use(globalErrorHandler);
 
 export default app;

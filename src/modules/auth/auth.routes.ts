@@ -1,41 +1,18 @@
-import express from "express";
-import { register, login } from "./auth.controller.js";
-import { protect, authorize } from "../../middlewares/auth.middleware.js";
+import { Router } from "express";
+import { AuthController } from "./auth.controller.js";
 import { validate } from "../../middlewares/validate.js";
-import { registerSchema, loginSchema } from "./auth.validation.js";
-import { authLimiter } from "../../middlewares/rateLimiter.js";
-import type { Request, Response } from "express";
+import { signupSchema, loginSchema } from "./auth.validation.js";
 
-const router = express.Router();
+const router = Router();
 
-// 🔓 Public routes
-router.post("/register", validate(registerSchema), register);
-router.post("/login", authLimiter, validate(loginSchema), login);
+// Test Route
+router.get("/test", (req, res) => res.json({ message: "Bhai, Auth Router ekdum zinda hai! 🎉" }));
 
-// 🔐 Protected route
-router.get(
-  "/profile",
-  protect,
-  (req: Request & { user?: any }, res: Response) => {
-    res.json({
-      success: true,
-      message: "Profile fetched successfully",
-      data: req.user,
-    });
-  }
-);
+// Route: POST /api/v1/auth/signup
+// Pehle request validate middleware ke paas jayegi, agar pass hui toh controller ke paas
+router.post("/signup", validate(signupSchema), AuthController.signup);
 
-// 🔒 Admin only
-router.get(
-  "/admin",
-  protect,
-  authorize("super-admin"),
-  (_req: Request, res: Response) => {
-    res.json({
-      success: true,
-      message: "Welcome Admin",
-    });
-  }
-);
+// Route: POST /api/v1/auth/login
+router.post("/login", validate(loginSchema), AuthController.login);
 
-export default router;
+export const authRoutes = router;

@@ -1,0 +1,1 @@
+// # SuperAdmin "God Mode" logic (act as any institute)

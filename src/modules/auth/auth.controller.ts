@@ -1,33 +1,31 @@
-import type { Request, Response } from "express";
-import { registerUser, loginUser } from "./auth.service.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { Request, Response } from 'express';
+import { AuthService } from './auth.service.js';
+import { catchAsync } from '../../shared/utils/catchAsync.js';
+import { ApiResponse } from '../../shared/utils/ApiResponse.js';
 
-export const register = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { name, email, password , role } = req.body;
+export class AuthController {
+  
+  // ── 1. SIGNUP API ──
+  static signup = catchAsync(async (req: Request, res: Response) => {
+    // Service ko data pass karo
+    const result = await AuthService.signup(req.body);
 
-    const user = await registerUser(name, email, password ,role);
+    // Standard format mein response bhej do
+    res.status(201).json(
+      new ApiResponse(201, result, 'User registered successfully! 🎉')
+    );
+  });
 
-    res.status(201).json({
-      success: true,
-      data: user,
-    });
-  }
-);
-
-export const login = asyncHandler(
-  async (req: Request, res: Response) => {
+  // ── 2. LOGIN API ──
+  static login = catchAsync(async (req: Request, res: Response) => {
     const { email, password } = req.body;
+    
+    // Service ko check karne bhejo
+    const result = await AuthService.login(email, password);
 
-    const { user, token } = await loginUser(email, password);
-
-    res.json({
-      success: true,
-      message: "Login successful",
-      data: {
-        user,
-        token,
-      },
-    });
-  }
-);
+    // Standard format mein response bhej do
+    res.status(200).json(
+      new ApiResponse(200, result, 'Logged in successfully! 🚀')
+    );
+  });
+}
