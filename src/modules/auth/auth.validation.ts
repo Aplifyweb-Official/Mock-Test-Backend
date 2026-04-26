@@ -16,7 +16,7 @@ const passwordSchema = z
 /**
  * 👤 Allowed roles
  */
-const roleEnum = z.enum(["student", "institute", "super-admin"]);
+const roleEnum = z.enum(["institute", "super-admin"]);
 
 /**
  * ✅ Register Schema (PRODUCTION)
