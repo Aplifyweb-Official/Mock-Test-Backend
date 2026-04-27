@@ -1,24 +1,31 @@
 import User from "./user.model.js";
-import bcrypt from "bcrypt";
 import { AppError } from "../../utils/AppError.js";
 
+/**
+ * 🧑 Create user (password already hashed)
+ */
 export const createUser = async (data: any) => {
-  const hashedPassword = await bcrypt.hash(data.password, 10);
-
-  const user = await User.create({
-    ...data,
-    password: hashedPassword,
-  });
-
+  const user = await User.create(data);
   return user;
 };
 
+/**
+ * 🔍 Find by email
+ */
 export const findUserByEmail = async (email: string) => {
-  const user = await User.findOne({ email });
-
-  return user;
+  return await User.findOne({ email });
 };
 
+/**
+ * 🔍 Find by username
+ */
+export const findUserByUsername = async (username: string) => {
+  return await User.findOne({ username });
+};
+
+/**
+ * 🔍 Find by ID
+ */
 export const findUserById = async (id: string) => {
   const user = await User.findById(id).select("-password");
 

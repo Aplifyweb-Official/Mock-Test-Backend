@@ -2,8 +2,6 @@ import { z } from "zod";
 
 /**
  * 🔐 Strong password regex
- * - min 6 chars
- * - at least 1 letter + 1 number
  */
 const passwordSchema = z
   .string()
@@ -14,12 +12,20 @@ const passwordSchema = z
   );
 
 /**
- * 👤 Allowed roles
+ * 👤 Username rules
  */
-const roleEnum = z.enum(["institute", "super-admin"]);
+const usernameSchema = z
+  .string()
+  .min(3, "Username must be at least 3 characters")
+  .max(30, "Username too long")
+  .regex(
+    /^[a-z0-9_]+$/,
+    "Username can only contain lowercase letters, numbers, and underscores"
+  )
+  .transform((val) => val.toLowerCase());
 
 /**
- * ✅ Register Schema (PRODUCTION)
+ * ✅ Register Institute Schema
  */
 export const registerSchema = z
   .object({
@@ -35,22 +41,21 @@ export const registerSchema = z
       .toLowerCase()
       .trim(),
 
-    password: passwordSchema,
+    username: usernameSchema,
 
-    role: roleEnum.optional(),
+    password: passwordSchema,
   })
-  .strict(); // ❗ prevents extra fields
+  .strict();
 
 /**
- * ✅ Login Schema (PRODUCTION)
+ * ✅ Login Schema (email OR username)
  */
 export const loginSchema = z
   .object({
-    email: z
+    identifier: z
       .string()
-      .email("Invalid email")
-      .toLowerCase()
-      .trim(),
+      .min(3, "Identifier is required")
+      .transform((val) => val.toLowerCase().trim()),
 
     password: z.string().min(1, "Password is required"),
   })

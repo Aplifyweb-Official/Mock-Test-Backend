@@ -1,11 +1,11 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// 👇 TypeScript interface (optional but recommended)
 export interface IUser extends Document {
   name: string;
+  username: string;
   email: string;
   password: string;
-  role:  "institute" | "super-admin";
+  role: "student" | "institute" | "super-admin";
   instituteId?: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +17,14 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
       trim: true,
+    },
+
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      index: true,
     },
 
     email: {
@@ -34,8 +42,8 @@ const userSchema = new Schema<IUser>(
 
     role: {
       type: String,
-      enum: ["institute", "super-admin"],
-      default: "institute",
+      enum: ["student", "institute", "super-admin"],
+      default: "student",
     },
 
     instituteId: {
@@ -50,7 +58,6 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// 👇 Export model
 const User = mongoose.model<IUser>("User", userSchema);
 
 export default User;

@@ -1,80 +1,96 @@
 import bcrypt from "bcrypt";
-import { createUser, findUserByEmail } from "../users/user.service.js";
+import {
+  createUser,
+  findUserByEmail,
+  findUserByUsername,
+} from "../users/user.service.js";
 import { generateToken } from "../../utils/generateToken.js";
 import { AppError } from "../../utils/AppError.js";
+import { Session } from "./session.model.js";
+import { getIO, getUserSocket } from "../../config/socket.config.js";
 
+/**
+ * 🏢 Register Institute
+ */
 export const registerUser = async (
   name: string,
   email: string,
-  password: string,
-  role?: string
+  username: string,
+  password: string
 ) => {
-  const existingUser = await findUserByEmail(email);
-  if (role === "super-admin") {
-    throw new AppError("Not allowed to create admin", 403);
-  }
-  if (existingUser) {
-    throw new AppError("User already exists", 400);
-  }
+  const existingEmail = await findUserByEmail(email);
+  if (existingEmail) throw new AppError("Email already exists", 400);
+
+  const existingUsername = await findUserByUsername(username);
+  if (existingUsername)
+    throw new AppError("Username already taken", 400);
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await createUser({
     name,
     email,
-    password,
-    role: role || "institute", // ✅ allow role
+    username,
+    password: hashedPassword,
+    role: "institute",
   });
 
   const userObj = user.toObject();
-  const { password: _password, ...safeUser } = userObj;
+  const { password: _p, ...safeUser } = userObj;
 
   return safeUser;
 };
-// export const registerUser = async (
-//   name: string,
-//   email: string,
-//   password: string
-// ) => {
-//   const existingUser = await findUserByEmail(email);
 
-//   if (existingUser) {
-//     throw new AppError("User already exists", 400);
-//   }
-
-//   const user = await createUser({
-//     name,
-//     email,
-//     password,
-//   });
-
-//   // 🔐 remove password safely
-//   const userObj = user.toObject();
-//   const { password: _password, ...safeUser } = userObj;
-
-//   return safeUser;
-// };
-
-export const loginUser = async (email: string, password: string) => {
-  const user = await findUserByEmail(email);
+/**
+ * 🔐 Login (email OR username)
+ */
+export const loginUser = async (
+  identifier: string,
+  password: string,
+  userAgent?: string
+) => {
+  let user = await findUserByEmail(identifier);
 
   if (!user) {
-    throw new AppError("Invalid email or password", 400);
+    user = await findUserByUsername(identifier);
   }
+
+  if (!user) throw new AppError("Invalid credentials", 400);
 
   const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) throw new AppError("Invalid credentials", 400);
 
-  if (!isMatch) {
-    throw new AppError("Invalid email or password", 400);
+  const token = generateToken({
+    userId: user._id.toString(),
+    role: user.role,
+    instituteId: user.instituteId?.toString(),
+  });
+
+  // 🔥 FORCE LOGOUT OLD DEVICE (SOCKET)
+  const oldSocketId = getUserSocket(user._id.toString());
+  if (oldSocketId) {
+    const io = getIO();
+    io.to(oldSocketId).emit("force_logout");
   }
 
-  const token = generateToken(user);
+  // 🔥 SINGLE DEVICE LOGIN
+  await Session.deleteMany({ userId: user._id });
 
-  // 🔐 remove password safely
-  const userObj = user.toObject();
-  const { password: _password, ...safeUser } = userObj;
-
-  return {
-    user: safeUser,
+  await Session.create({
+    userId: user._id,
     token,
-  };
+    userAgent,
+  });
+
+  const userObj = user.toObject();
+  const { password: _p, ...safeUser } = userObj;
+
+  return { user: safeUser, token };
 };
 
+/**
+ * 🚪 Logout
+ */
+export const logoutUser = async (userId: string, token: string) => {
+  await Session.deleteOne({ userId, token });
+};
