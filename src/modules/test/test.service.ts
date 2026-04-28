@@ -1,5 +1,5 @@
 import Test from "./test.model.js";
-import { AppError } from "../../utils/AppError.js";
+import { AppError } from "../../shared/utils/AppError.js";
 
 export const createTest = async (data: any) => {
   const test = await Test.create(data);

@@ -4,23 +4,23 @@ import {
   loginUser,
   logoutUser,
 } from "./auth.service.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
+
 
 export const registerInstitute = asyncHandler(
   async (req: Request, res: Response) => {
-    const { name, email, username, password } = req.body;
+    const { name, email, password } = req.body;
 
-    const user = await registerUser(
+    const { user, token } = await registerUser(
       name,
       email,
-      username,
       password
     );
 
     res.status(201).json({
       success: true,
       message: "Institute registered",
-      data: user,
+      data: { user, token }, // ✅ IMPORTANT
     });
   }
 );

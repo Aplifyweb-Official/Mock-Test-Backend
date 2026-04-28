@@ -1,5 +1,5 @@
 import User from "./user.model.js";
-import { AppError } from "../../utils/AppError.js";
+import { AppError } from "../../shared/utils/AppError.js";
 
 /**
  * 🧑 Create user (password already hashed)

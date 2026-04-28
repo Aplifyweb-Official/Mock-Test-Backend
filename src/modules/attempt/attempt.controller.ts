@@ -1,5 +1,5 @@
 import type{ Response } from "express";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 import { submitAttempt } from "./attempt.service.js";
 
 

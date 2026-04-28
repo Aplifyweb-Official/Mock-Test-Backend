@@ -4,7 +4,7 @@ import {
   getAllTests,
   getTestById,
 } from "./test.service.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 
 export const createTestController = asyncHandler(
   async (req: Request, res: Response) => {

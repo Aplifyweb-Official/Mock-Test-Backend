@@ -4,26 +4,27 @@ import {
   findUserByEmail,
   findUserByUsername,
 } from "../users/user.service.js";
-import { generateToken } from "../../utils/generateToken.js";
-import { AppError } from "../../utils/AppError.js";
+import { AppError } from "../../shared/utils/AppError.js";
 import { Session } from "./session.model.js";
 import { getIO, getUserSocket } from "../../config/socket.config.js";
+import { generateUniqueUsername } from "../../shared/utils/username.util.js";
+import { generateToken } from "../../shared/utils/generateToken.js";
 
 /**
  * 🏢 Register Institute
  */
+
 export const registerUser = async (
   name: string,
   email: string,
-  username: string,
   password: string
 ) => {
   const existingEmail = await findUserByEmail(email);
-  if (existingEmail) throw new AppError("Email already exists", 400);
+  if (existingEmail) {
+    throw new AppError("Email already exists", 400);
+  }
 
-  const existingUsername = await findUserByUsername(username);
-  if (existingUsername)
-    throw new AppError("Username already taken", 400);
+  const username = await generateUniqueUsername(name);
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -38,7 +39,18 @@ export const registerUser = async (
   const userObj = user.toObject();
   const { password: _p, ...safeUser } = userObj;
 
-  return safeUser;
+  // 🔥 ADD THIS
+  const token = generateToken({
+    userId: user._id.toString(),
+    role: user.role,
+    instituteId: user.instituteId?.toString(),
+  });
+
+  // 🔥 RETURN BOTH
+  return {
+    user: safeUser,
+    token,
+  };
 };
 
 /**

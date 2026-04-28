@@ -12,19 +12,6 @@ const passwordSchema = z
   );
 
 /**
- * 👤 Username rules
- */
-const usernameSchema = z
-  .string()
-  .min(3, "Username must be at least 3 characters")
-  .max(30, "Username too long")
-  .regex(
-    /^[a-z0-9_]+$/,
-    "Username can only contain lowercase letters, numbers, and underscores"
-  )
-  .transform((val) => val.toLowerCase());
-
-/**
  * ✅ Register Institute Schema
  */
 export const registerSchema = z
@@ -40,8 +27,6 @@ export const registerSchema = z
       .email("Invalid email")
       .toLowerCase()
       .trim(),
-
-    username: usernameSchema,
 
     password: passwordSchema,
   })

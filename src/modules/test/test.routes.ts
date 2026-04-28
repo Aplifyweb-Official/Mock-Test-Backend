@@ -8,7 +8,7 @@ import {
 import { protect, authorize } from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
 import { testSchema } from "./test.validation.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 
 const router = express.Router();
 
