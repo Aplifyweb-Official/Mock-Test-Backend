@@ -5,8 +5,10 @@ import mongoSanitize from "mongo-sanitize";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import attemptRoutes from "./modules/attempt/attempt.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
-import testRoutes from "./modules/test/test.routes.js";
 import { globalLimiter } from "./middlewares/rateLimiter.js";
+import userRoutes from "./modules/users/user.routes.js";
+import batchRoutes from "./modules/batches/batch.routes.js";
+import instituteRoutes from "./modules/institutes/institute.routes.js";
 
 
 const app = express();
@@ -43,8 +45,9 @@ app.use((req, _res, next) => {
  * 🚀 ROUTES
  */
 app.use("/api/auth", authRoutes);
-app.use("/api/tests", testRoutes);
-app.use("/api/attempts", attemptRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/batches", batchRoutes);
+app.use("/api/institute", instituteRoutes);
 
 /**
  * 🧪 HEALTH CHECK

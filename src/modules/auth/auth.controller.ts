@@ -3,16 +3,18 @@ import {
   registerUser,
   loginUser,
   logoutUser,
+  resetPassword,
 } from "./auth.service.js";
 import { asyncHandler } from "../../shared/utils/asyncHandler.js";
-
+import { forgotPassword } from "./auth.service.js";
 
 export const registerInstitute = asyncHandler(
   async (req: Request, res: Response) => {
-    const { name, email, password } = req.body;
+    const { adminName, instituteName, email, password } = req.body;
 
     const { user, token } = await registerUser(
-      name,
+      adminName,
+      instituteName,
       email,
       password
     );
@@ -79,6 +81,38 @@ export const logout = asyncHandler(
     return res.json({
       success: true,
       message: "Logged out successfully",
+    });
+  }
+);
+
+
+export const forgotPasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    const data = await forgotPassword(email);
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset link generated",
+      data,
+    });
+  }
+);
+
+
+export const resetPasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+
+    const token = req.params.token as string;
+
+    const { password } = req.body;
+
+    const data = await resetPassword(token, password);
+
+    res.status(200).json({
+      success: true,
+      ...data,
     });
   }
 );

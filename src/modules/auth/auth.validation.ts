@@ -16,10 +16,17 @@ const passwordSchema = z
  */
 export const registerSchema = z
   .object({
-    name: z
+
+    adminName: z
       .string()
-      .min(3, "Name must be at least 3 characters")
-      .max(50, "Name too long")
+      .min(3, "Admin name must be at least 3 characters")
+      .max(50, "Admin name too long")
+      .trim(),
+
+    instituteName: z
+      .string()
+      .min(2, "Institute name is required")
+      .max(100, "Institute name too long")
       .trim(),
 
     email: z
@@ -32,9 +39,6 @@ export const registerSchema = z
   })
   .strict();
 
-/**
- * ✅ Login Schema (email OR username)
- */
 export const loginSchema = z
   .object({
     identifier: z
@@ -43,5 +47,27 @@ export const loginSchema = z
       .transform((val) => val.toLowerCase().trim()),
 
     password: z.string().min(1, "Password is required"),
+  })
+  .strict();
+
+/**
+ * ✅ Forgot Password Schema 
+ */
+
+export const forgotPasswordSchema = z
+  .object({
+    email: z
+      .string()
+      .email("Invalid email")
+      .toLowerCase()
+      .trim(),
+  })
+  .strict();
+
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters"),
   })
   .strict();

@@ -1,21 +1,24 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import {
   createUser,
   findUserByEmail,
-  findUserByUsername,
 } from "../users/user.service.js";
 import { AppError } from "../../shared/utils/AppError.js";
 import { Session } from "./session.model.js";
 import { getIO, getUserSocket } from "../../config/socket.config.js";
 import { generateUniqueUsername } from "../../shared/utils/username.util.js";
 import { generateToken } from "../../shared/utils/generateToken.js";
+import { generateResetToken } from "../../shared/utils/generateResetToken.js";
+import { resetPasswordTemplate } from "../../shared/templates/resetPasswordTemplate.js";
 
 /**
  * 🏢 Register Institute
  */
 
 export const registerUser = async (
-  name: string,
+  adminName: string,
+  instituteName: string,
   email: string,
   password: string
 ) => {
@@ -24,18 +27,30 @@ export const registerUser = async (
     throw new AppError("Email already exists", 400);
   }
 
-  const username = await generateUniqueUsername(name);
-
+  const username =
+    await generateUniqueUsername(adminName);
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await createUser({
-    name,
+    name: adminName,
     email,
     username,
     password: hashedPassword,
     role: "institute",
   });
+  const institute =
+    await Institute.create({
 
+      name: instituteName,
+
+      email,
+
+      ownerId: user._id,
+    });
+
+  user.instituteId = institute._id;
+
+  await user.save();
   const userObj = user.toObject();
   const { password: _p, ...safeUser } = userObj;
 
@@ -55,23 +70,27 @@ export const registerUser = async (
 
 /**
  * 🔐 Login (email OR username)
- */
+import Institute from "../institutes/institute.model.js";
+ */import { findUserForLogin } from "../users/user.service.js";
+import User from "../users/user.model.js";
+import { sendEmail } from "../../shared/utils/sendemail.js";
+import Institute from "../institutes/institute.model.js";
+
 export const loginUser = async (
   identifier: string,
   password: string,
   userAgent?: string
 ) => {
-  let user = await findUserByEmail(identifier);
-
-  if (!user) {
-    user = await findUserByUsername(identifier);
-  }
+  // 🔥 FIX: use login-specific finder
+  const user = await findUserForLogin(identifier);
 
   if (!user) throw new AppError("Invalid credentials", 400);
 
+  // 🔐 compare password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new AppError("Invalid credentials", 400);
 
+  // 🎟️ generate token
   const token = generateToken({
     userId: user._id.toString(),
     role: user.role,
@@ -94,6 +113,7 @@ export const loginUser = async (
     userAgent,
   });
 
+  // 🔐 remove password
   const userObj = user.toObject();
   const { password: _p, ...safeUser } = userObj;
 
@@ -106,3 +126,75 @@ export const loginUser = async (
 export const logoutUser = async (userId: string, token: string) => {
   await Session.deleteOne({ userId, token });
 };
+
+// FORGATE PASSWORD
+export const forgotPassword = async (email: string) => {
+  const user = await findUserByEmail(email);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  // 🔥 generate tokens
+  const { resetToken, hashedToken } = generateResetToken();
+
+  // ⏰ expiry (15 min)
+  user.resetPasswordToken = hashedToken;
+  user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+  await user.save();
+
+  // 🔗 frontend reset link
+  const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+  await sendEmail(
+    user.email,
+    "Reset Your Password",
+    resetPasswordTemplate(resetUrl)
+  );
+
+  return {
+    message: "Reset email sent",
+  };
+};
+
+
+export const resetPassword = async (
+  token: string,
+  password: string
+) => {
+
+  // 🔒 hash incoming token
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  // 🔍 find valid user
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: new Date() },
+  }).select("+password");
+
+  if (!user) {
+    throw new AppError("Invalid or expired token", 400);
+  }
+
+  // 🔐 hash new password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  user.password = hashedPassword;
+
+  // 🧹 clear reset fields
+  user.resetPasswordToken = null;
+  user.resetPasswordExpires = null;
+
+  await user.save();
+
+  return {
+    message: "Password reset successful",
+  };
+};
+
+
+
