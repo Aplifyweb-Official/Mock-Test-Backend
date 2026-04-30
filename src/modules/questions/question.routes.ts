@@ -12,6 +12,7 @@ import {
     getSingleQuestionController,
     updateQuestionController,
     deleteQuestionController,
+    getAllQuestionsController,
 } from "./question.controller.js";
 
 import { validate }
@@ -36,6 +37,17 @@ router.post(
     validate(createQuestionSchema),
 
     createQuestionController
+);
+
+// GET ALL QUESTIONS
+router.get(
+    "/",
+
+    protect,
+
+    authorize("institute"),
+
+    getAllQuestionsController
 );
 
 // GET QUESTIONS

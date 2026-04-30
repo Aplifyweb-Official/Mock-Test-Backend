@@ -222,3 +222,25 @@ async (
 
   return true;
 };
+
+// GET ALL QUESTIONS
+export const getAllQuestions =
+async (
+  instituteId: string
+) => {
+
+  return await Question.find({
+
+    instituteId,
+
+  })
+
+  .populate(
+    "testId",
+    "title"
+  )
+
+  .sort({
+    createdAt: -1,
+  });
+};

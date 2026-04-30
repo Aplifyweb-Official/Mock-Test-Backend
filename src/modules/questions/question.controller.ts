@@ -12,6 +12,7 @@ import {
   getSingleQuestion,
   updateQuestion,
   deleteQuestion,
+  getAllQuestions,
 } from "./question.service.js";
 
 // CREATE QUESTION
@@ -165,6 +166,32 @@ asyncHandler(
 
       message:
         "Question deleted successfully",
+    });
+  }
+);
+
+// GET ALL QUESTIONS
+export const getAllQuestionsController =
+asyncHandler(
+  async (
+    req: Request & {
+      user?: any
+    },
+
+    res: Response
+  ) => {
+
+    const instituteId =
+      req.user?.instituteId;
+
+    const questions =
+      await getAllQuestions(
+        instituteId
+      );
+
+    res.json({
+      success: true,
+      data: questions,
     });
   }
 );
