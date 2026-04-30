@@ -1,1 +1,0 @@
-// # Exam details, assigned batches, start/end time

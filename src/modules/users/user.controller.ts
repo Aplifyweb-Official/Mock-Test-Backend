@@ -14,8 +14,7 @@ export const createStudentController = asyncHandler(
     const { name, email, password, batchId } = req.body;
 
     // 🔐 Get instituteId from token (NEVER from frontend)
-    const instituteId = req.user?.userId;
-
+    const instituteId = req.user?.instituteId;
     if (!instituteId) {
       return res.status(401).json({
         success: false,
@@ -67,7 +66,7 @@ export const deleteStudentController = asyncHandler(
 export const getStudentsController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
 
-    const instituteId = req.user?.userId;
+    const instituteId = req.user?.instituteId;
 
     const students = await getStudentsByInstitute(
       instituteId

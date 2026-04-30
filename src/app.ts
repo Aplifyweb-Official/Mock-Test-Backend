@@ -3,12 +3,13 @@ import cors from "cors";
 import helmet from "helmet";
 import mongoSanitize from "mongo-sanitize";
 import { errorHandler } from "./middlewares/error.middleware.js";
-import attemptRoutes from "./modules/attempt/attempt.routes.js";
+import testRoutes from "./modules/tests/test.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import { globalLimiter } from "./middlewares/rateLimiter.js";
 import userRoutes from "./modules/users/user.routes.js";
 import batchRoutes from "./modules/batches/batch.routes.js";
 import instituteRoutes from "./modules/institutes/institute.routes.js";
+import questionRoutes from "./modules/questions/question.routes.js";
 
 
 const app = express();
@@ -26,7 +27,7 @@ app.use(globalLimiter);
 // 3. CORS
 app.use(
   cors({
-    origin: "*", // ⚠️ change in production
+    origin: "http://localhost:5173", // ⚠️ change in production
     credentials: true,
   })
 );
@@ -48,6 +49,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/batches", batchRoutes);
 app.use("/api/institute", instituteRoutes);
+app.use("/api/tests", testRoutes);
+app.use("/api/questions", questionRoutes);
 
 /**
  * 🧪 HEALTH CHECK

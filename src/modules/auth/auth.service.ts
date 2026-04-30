@@ -58,10 +58,17 @@ export const registerUser = async (
   const token = generateToken({
     userId: user._id.toString(),
     role: user.role,
-    instituteId: user.instituteId?.toString(),
+    instituteId:
+      user.instituteId?.toString(),
   });
 
-  // 🔥 RETURN BOTH
+  // ✅ CREATE SESSION
+  await Session.create({
+    userId: user._id,
+    token,
+    userAgent: "register",
+  });
+
   return {
     user: safeUser,
     token,
