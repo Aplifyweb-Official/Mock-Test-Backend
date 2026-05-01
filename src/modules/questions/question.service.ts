@@ -1,11 +1,11 @@
 import Question
-from "./question.model.js";
+  from "./question.model.js";
 
 import Test
-from "../tests/test.model.js";
+  from "../tests/test.model.js";
 
 import { AppError }
-from "../../shared/utils/AppError.js";
+  from "../../shared/utils/AppError.js";
 
 type CreateQuestionPayload = {
 
@@ -24,223 +24,233 @@ type CreateQuestionPayload = {
   negativeMarks?: number;
 
   difficulty?:
-    | "easy"
-    | "medium"
-    | "hard";
+  | "easy"
+  | "medium"
+  | "hard";
 
   subject?: string;
 
   topic?: string;
 
-  order: number;
+  order?: number;
 };
 
 // CREATE QUESTION
 export const createQuestion =
-async (
-  payload:
-    CreateQuestionPayload,
+  async (
+    payload:
+      CreateQuestionPayload,
 
-  instituteId: string
-) => {
+    instituteId: string
+  ) => {
 
-  // VERIFY TEST BELONGS
-  // TO INSTITUTE
+    // VERIFY TEST BELONGS
+    // TO INSTITUTE
 
-  const test =
-    await Test.findOne({
+    const test =
+      await Test.findOne({
 
-      _id: payload.testId,
+        _id: payload.testId,
 
-      instituteId,
-    });
+        instituteId,
+      });
 
-  if (!test) {
+    if (!test) {
 
-    throw new AppError(
-      "Test not found",
-      404
-    );
-  }
+      throw new AppError(
+        "Test not found",
+        404
+      );
+    }
 
-  // VALIDATE OPTIONS
+    // VALIDATE OPTIONS
 
-  if (
-    payload.options.length < 2
-  ) {
+    if (
+      payload.options.length < 2
+    ) {
 
-    throw new AppError(
-      "Minimum 2 options required",
-      400
-    );
-  }
+      throw new AppError(
+        "Minimum 2 options required",
+        400
+      );
+    }
 
-  // VALIDATE ANSWER INDEX
+    // VALIDATE ANSWER INDEX
 
-  if (
-    payload.correctAnswer <
+    if (
+      payload.correctAnswer <
       0 ||
 
-    payload.correctAnswer >=
+      payload.correctAnswer >=
       payload.options.length
-  ) {
+    ) {
 
-    throw new AppError(
-      "Invalid correct answer index",
-      400
-    );
-  }
+      throw new AppError(
+        "Invalid correct answer index",
+        400
+      );
+    }
 
-  const question =
-    await Question.create({
+    const questionsCount =
+      await Question.countDocuments({
 
-      ...payload,
+        testId: payload.testId,
+      });
 
-      instituteId,
-    });
+    const question =
+      await Question.create({
 
-  return question;
-};
+        ...payload,
+
+        order:
+          payload.order ||
+          questionsCount + 1,
+
+        instituteId,
+      });
+
+    return question;
+  };
 
 // GET QUESTIONS
 // BY TEST
 
 export const getQuestionsByTest =
-async (
-  testId: string,
+  async (
+    testId: string,
 
-  instituteId: string
-) => {
+    instituteId: string
+  ) => {
 
-  const questions =
-    await Question.find({
+    const questions =
+      await Question.find({
 
-      testId,
+        testId,
 
-      instituteId,
-    })
+        instituteId,
+      })
 
-    .sort({
-      order: 1,
-    });
+        .sort({
+          order: 1,
+        });
 
-  return questions;
-};
+    return questions;
+  };
 
 // GET SINGLE QUESTION
 
 export const getSingleQuestion =
-async (
-  questionId: string,
+  async (
+    questionId: string,
 
-  instituteId: string
-) => {
+    instituteId: string
+  ) => {
 
-  const question =
-    await Question.findOne({
+    const question =
+      await Question.findOne({
 
-      _id: questionId,
+        _id: questionId,
 
-      instituteId,
-    });
+        instituteId,
+      });
 
-  if (!question) {
+    if (!question) {
 
-    throw new AppError(
-      "Question not found",
-      404
-    );
-  }
+      throw new AppError(
+        "Question not found",
+        404
+      );
+    }
 
-  return question;
-};
+    return question;
+  };
 
 // UPDATE QUESTION
 
 export const updateQuestion =
-async (
-  questionId: string,
+  async (
+    questionId: string,
 
-  instituteId: string,
+    instituteId: string,
 
-  payload:
-    Partial<CreateQuestionPayload>
-) => {
+    payload:
+      Partial<CreateQuestionPayload>
+  ) => {
 
-  const question =
-    await Question.findOne({
+    const question =
+      await Question.findOne({
 
-      _id: questionId,
+        _id: questionId,
 
-      instituteId,
-    });
+        instituteId,
+      });
 
-  if (!question) {
+    if (!question) {
 
-    throw new AppError(
-      "Question not found",
-      404
+      throw new AppError(
+        "Question not found",
+        404
+      );
+    }
+
+    Object.assign(
+      question,
+      payload
     );
-  }
 
-  Object.assign(
-    question,
-    payload
-  );
+    await question.save();
 
-  await question.save();
-
-  return question;
-};
+    return question;
+  };
 
 // DELETE QUESTION
 
 export const deleteQuestion =
-async (
-  questionId: string,
+  async (
+    questionId: string,
 
-  instituteId: string
-) => {
+    instituteId: string
+  ) => {
 
-  const question =
-    await Question.findOne({
+    const question =
+      await Question.findOne({
 
-      _id: questionId,
+        _id: questionId,
 
-      instituteId,
-    });
+        instituteId,
+      });
 
-  if (!question) {
+    if (!question) {
 
-    throw new AppError(
-      "Question not found",
-      404
-    );
-  }
+      throw new AppError(
+        "Question not found",
+        404
+      );
+    }
 
-  await question.deleteOne();
+    await question.deleteOne();
 
-  return true;
-};
+    return true;
+  };
 
 // GET ALL QUESTIONS
 export const getAllQuestions =
-async (
-  instituteId: string
-) => {
+  async (
+    instituteId: string
+  ) => {
 
-  return await Question.find({
+    return await Question.find({
 
-    instituteId,
+      instituteId,
 
-  })
+    })
 
-  .populate(
-    "testId",
-    "title"
-  )
+      .populate(
+        "testId",
+        "title"
+      )
 
-  .sort({
-    createdAt: -1,
-  });
-};
+      .sort({
+        createdAt: -1,
+      });
+  };
