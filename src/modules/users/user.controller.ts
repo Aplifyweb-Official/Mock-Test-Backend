@@ -13,8 +13,9 @@ import User from "./user.model.js";
 import ExcelJS from "exceljs";
 import { generateUniqueUsername } from "../../shared/utils/username.util.js";
 import Batch from "../batches/batch.model.js";
-import { studentCredentialsTemplate } from "../../shared/templates/studentCredentialsTemplate.js";
 import { sendEmail } from "../../shared/utils/sendemail.js";
+import { studentCredentialsTemplate } from "../../shared/templates/studentCredentialsTemplate.js";
+
 
 export const createStudentController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
@@ -44,7 +45,7 @@ export const createStudentController = asyncHandler(
     await sendEmail(
       email,
 
-      "Your Student Account Credentials",
+      username,
 
       studentCredentialsTemplate(
         name,

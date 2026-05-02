@@ -6,14 +6,22 @@ export const sendEmail = async (
   html: string
 ) => {
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
+  const transporter =
+    nodemailer.createTransport({
+      host: "smtp.hostinger.com",
 
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+      port: 465,
+
+      secure: true,
+
+      auth: {
+        user:
+          process.env.EMAIL_USER,
+
+        pass:
+          process.env.EMAIL_PASS,
+      },
+    });
 
   await transporter.sendMail({
     from: `"BrainMock" <${process.env.EMAIL_USER}>`,

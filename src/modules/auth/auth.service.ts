@@ -11,7 +11,10 @@ import { generateUniqueUsername } from "../../shared/utils/username.util.js";
 import { generateToken } from "../../shared/utils/generateToken.js";
 import { generateResetToken } from "../../shared/utils/generateResetToken.js";
 import { resetPasswordTemplate } from "../../shared/templates/resetPasswordTemplate.js";
-
+import { findUserForLogin } from "../users/user.service.js";
+import User from "../users/user.model.js";
+import { sendEmail } from "../../shared/utils/sendemail.js";
+import Institute from "../institutes/institute.model.js";
 /**
  * 🏢 Register Institute
  */
@@ -78,10 +81,7 @@ export const registerUser = async (
 /**
  * 🔐 Login (email OR username)
 import Institute from "../institutes/institute.model.js";
- */import { findUserForLogin } from "../users/user.service.js";
-import User from "../users/user.model.js";
-import { sendEmail } from "../../shared/utils/sendemail.js";
-import Institute from "../institutes/institute.model.js";
+ */
 
 export const loginUser = async (
   identifier: string,

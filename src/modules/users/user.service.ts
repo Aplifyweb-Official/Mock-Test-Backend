@@ -1,177 +1,316 @@
 import User from "./user.model.js";
-import { AppError } from "../../shared/utils/AppError.js";
+
+import { AppError }
+from "../../shared/utils/AppError.js";
+
 import bcrypt from "bcrypt";
 
+import {
+  createNotification
+} from "../notifications/notification.service.js";
+
+import {
+  sendEmail
+} from "../../shared/utils/sendemail.js";
+
+import {
+  studentCredentialsTemplate
+} from "../../shared/templates/studentCredentialsTemplate.js";
 
 /**
- * 🧑 Create user (password already hashed)
+ * 🧑 CREATE USER
  */
-export const createUser = async (data: any) => {
+export const createUser =
+async (data: any) => {
+
   try {
-    const user = await User.create(data);
+
+    const user =
+      await User.create(data);
+
     return user;
+
   } catch (err: any) {
+
+    // ❌ DUPLICATE KEY
     if (err.code === 11000) {
-      // duplicate key (email or username)
-      const field = Object.keys(err.keyPattern)[0];
-      throw new AppError(`${field} already exists`, 400);
+
+      const field =
+        Object.keys(
+          err.keyPattern
+        )[0];
+
+      throw new AppError(
+
+        `${field} already exists`,
+
+        400
+      );
     }
+
     throw err;
   }
 };
 
 /**
- * 🔍 Find by email (NO password)
+ * 🔍 FIND BY EMAIL
  */
-export const findUserByEmail = async (email: string) => {
-  return await User.findOne({ email });
-};
+export const findUserByEmail =
+async (email: string) => {
 
-/**
- * 🔍 Find by username (NO password)
- */
-export const findUserByUsername = async (username: string) => {
-  return await User.findOne({ username });
-};
-
-/**
- * 🔐 Find for login (email OR username WITH password)
- */
-export const findUserForLogin = async (identifier: string) => {
   return await User.findOne({
-    $or: [{ email: identifier }, { username: identifier }],
-  }).select("+password"); // 🔥 required for login
+    email,
+  });
 };
 
 /**
- * 🔍 Find by ID (safe)
+ * 🔍 FIND BY USERNAME
  */
-export const findUserById = async (id: string) => {
-  const user = await User.findById(id).select("-password");
+export const findUserByUsername =
+async (username: string) => {
+
+  return await User.findOne({
+    username,
+  });
+};
+
+/**
+ * 🔐 FIND FOR LOGIN
+ */
+export const findUserForLogin =
+async (identifier: string) => {
+
+  return await User.findOne({
+
+    $or: [
+
+      {
+        email: identifier
+      },
+
+      {
+        username: identifier
+      },
+    ],
+  })
+
+    .select("+password");
+};
+
+/**
+ * 🔍 FIND USER BY ID
+ */
+export const findUserById =
+async (id: string) => {
+
+  const user =
+    await User.findById(id)
+
+      .select("-password");
 
   if (!user) {
-    throw new AppError("User not found", 404);
+
+    throw new AppError(
+      "User not found",
+      404
+    );
   }
 
   return user;
 };
 
 /**
- * 👨‍🎓 Create student (INSTITUTE ONLY)
+ * 👨‍🎓 CREATE STUDENT
  */
 export const createStudentUser =
-  async (
+async (
 
-    data: {
+  data: {
 
-      name: string;
+    name: string;
 
-      email: string;
+    email: string;
 
-      username: string;
+    username: string;
 
-      password: string;
+    password: string;
 
-      batchId: string;
-    },
+    batchId: string;
+  },
 
-    instituteId: string
-  ) => {
-
-    try {
-
-      // 🔐 HASH PASSWORD
-      const hashedPassword =
-        await bcrypt.hash(
-
-          data.password,
-
-          10
-        );
-
-      // ✅ CREATE STUDENT
-      const student =
-        await User.create({
-
-          name:
-            data.name,
-
-          email:
-            data.email,
-
-          username:
-            data.username,
-
-          password:
-            hashedPassword,
-
-          batchId:
-            data.batchId,
-
-          role:
-            "student",
-
-          instituteId,
-
-          status:
-            "active",
-
-          mustChangePassword:
-            true,
-        });
-
-      // 🔐 REMOVE PASSWORD
-      const obj =
-        student.toObject();
-
-      const {
-
-        password: _p,
-
-        ...safeStudent
-
-      } = obj;
-
-      return safeStudent;
-
-    } catch (err: any) {
-
-      // ❌ DUPLICATE KEY
-      if (
-        err.code === 11000
-      ) {
-
-        const field =
-          Object.keys(
-            err.keyPattern
-          )[0];
-
-        throw new AppError(
-
-          `${field} already exists`,
-
-          400
-        );
-      }
-
-      throw err;
-    }
-  };
-
-export const deleteStudentByInstitute = async (
-  studentId: string,
   instituteId: string
 ) => {
 
-  const student = await User.findOne({
-    _id: studentId,
-    role: "student",
-    instituteId,
-  });
+  try {
+
+    // 🔐 GENERATE TEMP PASSWORD
+    const tempPassword =
+
+      Math.random()
+
+        .toString(36)
+
+        .slice(-8);
+
+    // 🔐 HASH PASSWORD
+    const hashedPassword =
+
+      await bcrypt.hash(
+
+        tempPassword,
+
+        10
+      );
+
+    // ✅ CREATE STUDENT
+    const student =
+
+      await User.create({
+
+        name:
+          data.name,
+
+        email:
+          data.email,
+
+        username:
+          data.username,
+
+        password:
+          hashedPassword,
+
+        batchId:
+          data.batchId,
+
+        role:
+          "student",
+
+        instituteId,
+
+        status:
+          "active",
+
+        mustChangePassword:
+          true,
+      });
+
+    // 🔔 FIND INSTITUTE USER
+    const instituteUser =
+
+      await User.findOne({
+
+        instituteId,
+
+        role:
+          "institute",
+      });
+
+    // 🔔 CREATE NOTIFICATION
+    if (instituteUser) {
+
+      await createNotification({
+
+        userId:
+          instituteUser._id.toString(),
+
+        title:
+          "New Student Added",
+
+        message:
+          `${data.name} has been added successfully.`,
+
+        type:
+          "system",
+
+        link:
+          "/institute/admin/students",
+      });
+    }
+
+    // 📧 SEND EMAIL
+    await sendEmail(
+
+      data.email,
+
+      "Your BrainMock Student Account",
+
+      studentCredentialsTemplate(
+
+        data.name,
+
+        data.email,
+
+        tempPassword
+      )
+    );
+
+    // 🔐 REMOVE PASSWORD
+    const obj =
+      student.toObject();
+
+    const {
+
+      password: _p,
+
+      ...safeStudent
+
+    } = obj;
+
+    return safeStudent;
+
+  } catch (err: any) {
+
+    // ❌ DUPLICATE KEY
+    if (err.code === 11000) {
+
+      const field =
+
+        Object.keys(
+          err.keyPattern
+        )[0];
+
+      throw new AppError(
+
+        `${field} already exists`,
+
+        400
+      );
+    }
+
+    throw err;
+  }
+};
+
+/**
+ * ❌ DELETE STUDENT
+ */
+export const deleteStudentByInstitute =
+async (
+
+  studentId: string,
+
+  instituteId: string
+) => {
+
+  const student =
+
+    await User.findOne({
+
+      _id:
+        studentId,
+
+      role:
+        "student",
+
+      instituteId,
+    });
 
   if (!student) {
+
     throw new AppError(
+
       "Student not found or unauthorized",
+
       404
     );
   }
@@ -181,48 +320,90 @@ export const deleteStudentByInstitute = async (
   return true;
 };
 
-
-export const getStudentsByInstitute = async (
+/**
+ * 📋 GET STUDENTS
+ */
+export const getStudentsByInstitute =
+async (
   instituteId: string
 ) => {
+
   return await User.find({
-    role: "student",
+
+    role:
+      "student",
+
     instituteId,
   })
-    .populate("batchId", "name")
+
+    .populate(
+      "batchId",
+      "name"
+    )
+
     .select("-password")
-    .sort({ createdAt: -1 });
+
+    .sort({
+      createdAt: -1,
+    });
 };
 
+/**
+ * ✏️ UPDATE STUDENT
+ */
+export const updateStudentByInstitute =
+async (
 
-export const updateStudentByInstitute = async (
   studentId: string,
+
   instituteId: string,
+
   data: {
+
     name: string;
+
     email: string;
+
     batchId: string;
+
     status: string;
   }
 ) => {
 
-  const student = await User.findOne({
-    _id: studentId,
-    role: "student",
-    instituteId,
-  });
+  const student =
+
+    await User.findOne({
+
+      _id:
+        studentId,
+
+      role:
+        "student",
+
+      instituteId,
+    });
 
   if (!student) {
+
     throw new AppError(
+
       "Student not found or unauthorized",
+
       404
     );
   }
 
-  student.name = data.name;
-  student.email = data.email;
-  student.batchId = data.batchId as any;
-  student.status = data.status as any;
+  student.name =
+    data.name;
+
+  student.email =
+    data.email;
+
+  student.batchId =
+    data.batchId as any;
+
+  student.status =
+    data.status as any;
 
   await student.save();
 

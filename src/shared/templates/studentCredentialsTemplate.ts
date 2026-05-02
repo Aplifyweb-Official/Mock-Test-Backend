@@ -28,7 +28,7 @@ export const studentCredentialsTemplate =
           color: #0f172a;
           margin-bottom: 12px;
         ">
-          Welcome to ExamAI 🎓
+          Welcome to Braimock 🎓
         </h1>
 
         <p style="

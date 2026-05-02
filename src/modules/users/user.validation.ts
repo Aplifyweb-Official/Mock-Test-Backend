@@ -19,8 +19,5 @@ export const createStudentSchema = z.object({
     .refine((val) => mongoose.Types.ObjectId.isValid(val), {
       message: "Invalid batchId",
     }),
-    
-  // 🔥 FIX: Ye dono fields add karni padengi kyunki tera service inko maang raha hai
-  username: z.string().min(3, "Username is required").trim(),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-}).strict();
+});
+// 🚨 NOTE: Maine yahan se .strict(), username, aur password hata diya hai.
