@@ -4,10 +4,11 @@ import {
   login,
   logout,
   resetPasswordController,
+  changePasswordController
 } from "./auth.controller.js";
 import { protect, authorize } from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
-import { registerSchema, loginSchema, resetPasswordSchema } from "./auth.validation.js";
+import { registerSchema, loginSchema, resetPasswordSchema, changePasswordSchema } from "./auth.validation.js";
 import { authLimiter } from "../../middlewares/rateLimiter.js";
 import { forgotPasswordController } from "./auth.controller.js";
 import { forgotPasswordSchema } from "./auth.validation.js";
@@ -49,6 +50,24 @@ router.post(
   resetPasswordController
 );
 
+router.put(
+
+  "/change-password",
+
+  protect,
+
+  authorize(
+    "student",
+    "institute",
+    "super-admin"
+  ),
+
+  validate(
+    changePasswordSchema
+  ),
+
+  changePasswordController
+);
 router.get(
   "/profile",
   protect,

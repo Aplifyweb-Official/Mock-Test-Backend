@@ -14,10 +14,6 @@ export const createStudentSchema = z.object({
     .toLowerCase()
     .trim(),
 
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters"),
-
   batchId: z
     .string()
     .refine((val) => mongoose.Types.ObjectId.isValid(val), {

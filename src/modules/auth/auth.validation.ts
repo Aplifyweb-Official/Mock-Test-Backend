@@ -71,3 +71,13 @@ export const resetPasswordSchema = z
       .min(6, "Password must be at least 6 characters"),
   })
   .strict();
+
+export const changePasswordSchema =
+  z.object({
+
+    oldPassword:
+      z.string().min(1),
+
+    newPassword:
+      passwordSchema,
+  });

@@ -10,7 +10,7 @@ import userRoutes from "./modules/users/user.routes.js";
 import batchRoutes from "./modules/batches/batch.routes.js";
 import instituteRoutes from "./modules/institutes/institute.routes.js";
 import questionRoutes from "./modules/questions/question.routes.js";
-
+import attemptRoutes from "./modules/attempt/attempt.routes.js";
 
 const app = express();
 
@@ -51,6 +51,7 @@ app.use("/api/batches", batchRoutes);
 app.use("/api/institute", instituteRoutes);
 app.use("/api/tests", testRoutes);
 app.use("/api/questions", questionRoutes);
+app.use("/api/attempts", attemptRoutes);
 
 /**
  * 🧪 HEALTH CHECK

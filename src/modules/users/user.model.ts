@@ -13,6 +13,7 @@ export interface IUser extends Document {
   instituteId: mongoose.Types.ObjectId | null;
   batchId: mongoose.Types.ObjectId | null;
   status: "active" | "inactive" | "blocked";
+  mustChangePassword: boolean;
   avgScore: number;
   createdAt: Date;
   updatedAt: Date;
@@ -92,6 +93,12 @@ const userSchema = new Schema<IUser>(
       default: "active",
     },
 
+    mustChangePassword: {
+
+      type: Boolean,
+
+      default: false,
+    },
     avgScore: {
       type: Number,
       default: 0,

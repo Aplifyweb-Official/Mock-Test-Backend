@@ -1,41 +1,85 @@
-import Attempt from "./attempt.model.js";
-import Test from "../test/test.model.js";
-import { AppError } from "../../shared/utils/AppError.js";
+import ExamAttempt
+from "./attempt.model.js";
 
-export const submitAttempt = async (
-  userId: string,
+import Test
+from "../tests/test.model.js";
+
+import Question
+from "../questions/question.model.js";
+
+import {
+  AppError
+} from "../../shared/utils/AppError.js";
+
+export const startExamAttempt =
+async (
+
+  studentId: string,
+
   testId: string,
-  answers: any[]
+
+  instituteId: string
 ) => {
-  const test = await Test.findById(testId);
+
+  // ✅ FIND TEST
+  const test =
+    await Test.findById(
+      testId
+    );
 
   if (!test) {
-    throw new AppError("Test not found", 404);
+
+    throw new AppError(
+      "Test not found",
+      404
+    );
   }
 
-  // prevent multiple attempts
-  const existing = await Attempt.findOne({ userId, testId });
-  if (existing) {
-    throw new AppError("You already attempted this test", 400);
+  // 🚨 PREVENT MULTIPLE ACTIVE ATTEMPTS
+  const existingAttempt =
+    await ExamAttempt.findOne({
+
+      studentId,
+
+      testId,
+
+      status:
+        "in-progress",
+    });
+
+  if (existingAttempt) {
+
+    return existingAttempt;
   }
 
-  let score = 0;
+  // ✅ COUNT QUESTIONS
+  const totalQuestions =
+    await Question.countDocuments({
 
-  answers.forEach((ans) => {
-    const question = test.questions.id(ans.questionId);
+      testId:
+        test._id,
+    });
 
-    if (question && question.correctAnswer === ans.selectedAnswer) {
-      score += question.marks;
-    }
-  });
+  // ✅ CREATE ATTEMPT
+  const attempt =
+    await ExamAttempt.create({
 
+      studentId,
 
-  const attempt = await Attempt.create({
-    userId,
-    testId,
-    answers,
-    score,
-  });
+      instituteId,
+
+      testId,
+
+      status:
+        "in-progress",
+
+      startedAt:
+        new Date(),
+
+      totalQuestions,
+
+      answers: [],
+    });
 
   return attempt;
 };

@@ -1,21 +1,54 @@
-import type{ Response } from "express";
-import { asyncHandler } from "../../shared/utils/asyncHandler.js";
-import { submitAttempt } from "./attempt.service.js";
+import type {
+  Request,
+  Response
+}
+from "express";
 
+import {
+  asyncHandler
+}
+from "../../shared/utils/asyncHandler.js";
 
-export const submitAttemptController = asyncHandler (
-  async (req: any, res: Response) => {
-    const userId = req.user.id;
-    const { testId, answers } = req.body;
+import {
+  startExamAttempt
+}
+from "./attempt.service.js";
 
-    const attempt = await submitAttempt(userId, testId, answers);
+export const startAttemptController =
+asyncHandler(
 
-    res.json({
+  async (
+
+    req: Request & {
+      user?: any
+    },
+
+    res: Response
+  ) => {
+
+    const {
+      testId
+    } = req.params;
+
+    const attempt =
+      await startExamAttempt(
+
+        req.user.userId,
+
+        testId as string,
+
+        req.user.instituteId
+      );
+
+    res.status(201).json({
+
       success: true,
-      message: "Test submitted",
-      data: {
-        score: attempt.score,
-      },
+
+      message:
+        "Exam started successfully",
+
+      data:
+        attempt,
     });
   }
 );

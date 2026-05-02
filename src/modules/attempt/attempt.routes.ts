@@ -1,11 +1,39 @@
-import express from "express";
-import { submitAttemptController } from "./attempt.controller.js";
-import { protect } from "../../middlewares/auth.middleware.js";
+import express
+    from "express";
 
-const router = express.Router();
+import {
 
-// 🔐 Student submits test
-router.post("/", protect, submitAttemptController);
+    protect,
 
+    authorize
+
+} from "../../middlewares/auth.middleware.js";
+
+import {
+
+    startAttemptController
+
+} from "./attempt.controller.js";
+import { startAttemptSchema } from "./attempt.validation.js";
+import { validate } from "../../middlewares/validate.js";
+
+const router =
+    express.Router();
+
+// 🚀 START EXAM
+router.post(
+
+    "/start/:testId",
+
+    protect,
+
+    authorize("student"),
+
+    validate(
+        startAttemptSchema
+    ),
+
+    startAttemptController
+);
 
 export default router;

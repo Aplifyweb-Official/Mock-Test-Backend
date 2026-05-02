@@ -204,4 +204,69 @@ export const resetPassword = async (
 };
 
 
+export const changePassword =
+  async (
 
+    userId: string,
+
+    oldPassword: string,
+
+    newPassword: string
+  ) => {
+
+    // ✅ FIND USER
+    const user =
+      await User.findById(
+        userId
+      ).select("+password");
+
+    if (!user) {
+
+      throw new AppError(
+        "User not found",
+        404
+      );
+    }
+
+    // ✅ CHECK OLD PASSWORD
+    const isMatch =
+      await bcrypt.compare(
+
+        oldPassword,
+
+        user.password
+      );
+
+    if (!isMatch) {
+
+      throw new AppError(
+        "Old password is incorrect",
+        400
+      );
+    }
+
+    // ✅ HASH NEW PASSWORD
+    const hashedPassword =
+      await bcrypt.hash(
+
+        newPassword,
+
+        10
+      );
+
+    // ✅ UPDATE PASSWORD
+    user.password =
+      hashedPassword;
+
+    // 🚨 IMPORTANT
+    user.mustChangePassword =
+      false;
+
+    await user.save();
+
+    return {
+
+      message:
+        "Password changed successfully",
+    };
+  };

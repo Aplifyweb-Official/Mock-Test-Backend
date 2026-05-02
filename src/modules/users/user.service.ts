@@ -1,5 +1,7 @@
 import User from "./user.model.js";
 import { AppError } from "../../shared/utils/AppError.js";
+import bcrypt from "bcrypt";
+
 
 /**
  * 🧑 Create user (password already hashed)
@@ -57,35 +59,104 @@ export const findUserById = async (id: string) => {
 /**
  * 👨‍🎓 Create student (INSTITUTE ONLY)
  */
-export const createStudentUser = async (
-  data: {
-    name: string;
-    email: string;
-    username: string;
-    password: string;
-    batchId: string;
-  },
-  instituteId: string
-) => {
-  try {
-    const student = await User.create({
-      ...data,
-      role: "student",
-      instituteId,
-    });
+export const createStudentUser =
+  async (
 
-    const obj = student.toObject();
-    const { password: _p, ...safeStudent } = obj;
+    data: {
 
-    return safeStudent;
-  } catch (err: any) {
-    if (err.code === 11000) {
-      const field = Object.keys(err.keyPattern)[0];
-      throw new AppError(`${field} already exists`, 400);
+      name: string;
+
+      email: string;
+
+      username: string;
+
+      password: string;
+
+      batchId: string;
+    },
+
+    instituteId: string
+  ) => {
+
+    try {
+
+      // 🔐 HASH PASSWORD
+      const hashedPassword =
+        await bcrypt.hash(
+
+          data.password,
+
+          10
+        );
+
+      // ✅ CREATE STUDENT
+      const student =
+        await User.create({
+
+          name:
+            data.name,
+
+          email:
+            data.email,
+
+          username:
+            data.username,
+
+          password:
+            hashedPassword,
+
+          batchId:
+            data.batchId,
+
+          role:
+            "student",
+
+          instituteId,
+
+          status:
+            "active",
+
+          mustChangePassword:
+            true,
+        });
+
+      // 🔐 REMOVE PASSWORD
+      const obj =
+        student.toObject();
+
+      const {
+
+        password: _p,
+
+        ...safeStudent
+
+      } = obj;
+
+      return safeStudent;
+
+    } catch (err: any) {
+
+      // ❌ DUPLICATE KEY
+      if (
+        err.code === 11000
+      ) {
+
+        const field =
+          Object.keys(
+            err.keyPattern
+          )[0];
+
+        throw new AppError(
+
+          `${field} already exists`,
+
+          400
+        );
+      }
+
+      throw err;
     }
-    throw err;
-  }
-};
+  };
 
 export const deleteStudentByInstitute = async (
   studentId: string,

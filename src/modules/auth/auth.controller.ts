@@ -4,9 +4,13 @@ import {
   loginUser,
   logoutUser,
   resetPassword,
+  changePassword,
 } from "./auth.service.js";
+import bcrypt from "bcrypt";
+
 import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 import { forgotPassword } from "./auth.service.js";
+import User from "../users/user.model.js";
 
 export const registerInstitute = asyncHandler(
   async (req: Request, res: Response) => {
@@ -116,3 +120,73 @@ export const resetPasswordController = asyncHandler(
     });
   }
 );
+
+export const changePasswordController =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    try {
+
+      const userId =
+        (req as Request & {
+          user?: any
+        }).user?.userId;
+
+      const user =
+        await User.findById(
+          userId
+        ).select("+password");
+
+      if (!user) {
+
+        return res.status(404).json({
+          message: "User not found",
+        });
+      }
+
+      const {
+        currentPassword,
+        newPassword
+      } = req.body;
+
+      const isMatch =
+        await bcrypt.compare(
+          currentPassword,
+          user.password
+        );
+
+      if (!isMatch) {
+
+        return res.status(400).json({
+          message:
+            "Current password incorrect",
+        });
+      }
+
+      user.password =
+        await bcrypt.hash(
+          newPassword,
+          10
+        );
+
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message:
+          "Password updated successfully",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Something went wrong",
+      });
+    }
+  };
