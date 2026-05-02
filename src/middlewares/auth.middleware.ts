@@ -38,7 +38,6 @@ export const protect = async (
       token,
       process.env.JWT_SECRET as string
     );
-    console.log(decoded);
 
     // ✅ Check session exists
     const session = await Session.findOne({

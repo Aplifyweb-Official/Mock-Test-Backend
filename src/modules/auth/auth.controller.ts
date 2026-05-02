@@ -129,15 +129,18 @@ export const changePasswordController =
 
     try {
 
+
       const userId =
         (req as Request & {
           user?: any
         }).user?.userId;
 
+
       const user =
         await User.findById(
           userId
         ).select("+password");
+
 
       if (!user) {
 
@@ -151,11 +154,13 @@ export const changePasswordController =
         newPassword
       } = req.body;
 
+
       const isMatch =
         await bcrypt.compare(
           currentPassword,
           user.password
         );
+
 
       if (!isMatch) {
 
@@ -171,7 +176,12 @@ export const changePasswordController =
           10
         );
 
+      user.mustChangePassword =
+        false;
+
       await user.save();
+
+
 
       res.status(200).json({
         success: true,
@@ -179,14 +189,15 @@ export const changePasswordController =
           "Password updated successfully",
       });
 
-    } catch (error) {
+    } catch (error: any) {
 
-      console.log(error);
+
+
 
       res.status(500).json({
         success: false,
         message:
-          "Something went wrong",
+          error.message || "Server Error",
       });
     }
   };

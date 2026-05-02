@@ -2,70 +2,173 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import mongoSanitize from "mongo-sanitize";
-import { errorHandler } from "./middlewares/error.middleware.js";
-import testRoutes from "./modules/tests/test.routes.js";
-import authRoutes from "./modules/auth/auth.routes.js";
-import { globalLimiter } from "./middlewares/rateLimiter.js";
-import userRoutes from "./modules/users/user.routes.js";
-import batchRoutes from "./modules/batches/batch.routes.js";
-import instituteRoutes from "./modules/institutes/institute.routes.js";
-import questionRoutes from "./modules/questions/question.routes.js";
-import attemptRoutes from "./modules/attempt/attempt.routes.js";
+
+import { errorHandler }
+from "./middlewares/error.middleware.js";
+
+import { globalLimiter }
+from "./middlewares/rateLimiter.js";
+
+// 🚀 ROUTES
+import authRoutes
+from "./modules/auth/auth.routes.js";
+
+import userRoutes
+from "./modules/users/user.routes.js";
+
+import batchRoutes
+from "./modules/batches/batch.routes.js";
+
+import instituteRoutes
+from "./modules/institutes/institute.routes.js";
+
+import testRoutes
+from "./modules/tests/test.routes.js";
+
+import questionRoutes
+from "./modules/questions/question.routes.js";
+
+import attemptRoutes
+from "./modules/attempt/attempt.routes.js";
+
+import supportRoutes
+from "./modules/support/support.routes.js";
+
+import contactRoutes
+from "./modules/contact/contact.routes.js";
+import notificationRoutes from "./modules/notifications/notification.routes.js";
+
+
 
 const app = express();
 
 /**
+ * ====================================================
  * 🔐 SECURITY MIDDLEWARES
+ * ====================================================
  */
 
-// 1. Secure headers
+// ✅ Secure HTTP headers
 app.use(helmet());
 
-// 2. Rate limiting (global)
+// ✅ Global rate limiter
 app.use(globalLimiter);
 
-// 3. CORS
+// ✅ CORS
 app.use(
   cors({
-    origin: "http://localhost:5173", // ⚠️ change in production
-    credentials: true,
+
+    origin:
+      "http://localhost:5173",
+
+    credentials:
+      true,
   })
 );
 
-// 4. Body parser (limit size)
-app.use(express.json({ limit: "10kb" }));
 
-// 5. NoSQL Injection Protection (SAFE VERSION)
-app.use((req, _res, next) => {
-  req.body = mongoSanitize(req.body); // ✅ only body
-  next();
-});
+// ✅ JSON parser
+app.use(
+  express.json({
 
+    limit: "10kb",
+  })
+);
+
+// ✅ NoSQL injection protection
+app.use(
+  (req, _res, next) => {
+
+    req.body =
+      mongoSanitize(req.body);
+
+    next();
+  }
+);
 
 /**
- * 🚀 ROUTES
+ * ====================================================
+ * 🚀 API ROUTES
+ * ====================================================
  */
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/batches", batchRoutes);
-app.use("/api/institute", instituteRoutes);
-app.use("/api/tests", testRoutes);
-app.use("/api/questions", questionRoutes);
-app.use("/api/attempts", attemptRoutes);
+
+app.use(
+  "/api/auth",
+  authRoutes
+);
+
+app.use(
+  "/api/users",
+  userRoutes
+);
+
+app.use(
+  "/api/batches",
+  batchRoutes
+);
+
+app.use(
+  "/api/institute",
+  instituteRoutes
+);
+
+app.use(
+  "/api/tests",
+  testRoutes
+);
+
+app.use(
+  "/api/questions",
+  questionRoutes
+);
+
+app.use(
+  "/api/attempts",
+  attemptRoutes
+);
+
+app.use(
+  "/api/support",
+  supportRoutes
+);
+
+app.use(
+  "/api/contact",
+  contactRoutes
+);
+
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
 
 /**
+ * ====================================================
  * 🧪 HEALTH CHECK
+ * ====================================================
  */
-app.get("/", (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "API is running...",
-  });
-});
+
+app.get(
+  "/",
+
+  (_req, res) => {
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        "API is running...",
+    });
+  }
+);
 
 /**
- * ❌ GLOBAL ERROR HANDLER (ALWAYS LAST)
+ * ====================================================
+ * ❌ GLOBAL ERROR HANDLER
+ * ====================================================
  */
+
 app.use(errorHandler);
 
 export default app;

@@ -50,7 +50,7 @@ router.post(
   resetPasswordController
 );
 
-router.put(
+router.post(
 
   "/change-password",
 
@@ -62,9 +62,6 @@ router.put(
     "super-admin"
   ),
 
-  validate(
-    changePasswordSchema
-  ),
 
   changePasswordController
 );

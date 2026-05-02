@@ -8,8 +8,6 @@ import User from "./user.model.js";
 import * as XLSX from "xlsx";
 import { generateUniqueUsername } from "../../shared/utils/username.util.js";
 import Batch from "../batches/batch.model.js";
-import { studentCredentialsTemplate } from "../../shared/templates/studentCredentialsTemplate.js";
-import { sendEmail } from "../../shared/utils/sendemail.js";
 
 export const createStudentController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
@@ -29,55 +27,28 @@ export const createStudentController = asyncHandler(
 
     // 🔥 Generate username automatically
     const username = await generateUsername(name);
-    const tempPassword =
 
-      `EXAM-${Math.floor(
+  const student =
+  await createStudentUser(
 
-        1000 +
+    {
 
-        Math.random() * 9000
-      )}`;
-    const student = await createStudentUser(
-      {
-        name,
-        email,
-        username,
-        password:
-          tempPassword,
-        batchId,
-      },
-      instituteId
-    );
-    await sendEmail(
+      name,
 
       email,
 
-      "Your Student Account Credentials",
+      username,
 
-      studentCredentialsTemplate(
+      batchId,
+    },
 
-        name,
-
-        email,
-
-        tempPassword
-      )
-    );
+    instituteId
+  );
+   
     res.status(201).json({
-
       success: true,
-
-      message:
-        "Student created successfully",
-
-      data: {
-
-        student,
-
-        username,
-
-        tempPassword,
-      },
+      message: "Student created successfully",
+      data: student,
     });
   }
 );
