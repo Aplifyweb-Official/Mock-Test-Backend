@@ -11,6 +11,7 @@ import batchRoutes from "./modules/batches/batch.routes.js";
 import instituteRoutes from "./modules/institutes/institute.routes.js";
 import questionRoutes from "./modules/questions/question.routes.js";
 import attemptRoutes from "./modules/attempt/attempt.routes.js";
+import aiRoutes from "./modules/ai-generator/ai.routes.js";
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use("/api/batches", batchRoutes);
 app.use("/api/institute", instituteRoutes);
 app.use("/api/tests", testRoutes);
 app.use("/api/questions", questionRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api/attempts", attemptRoutes);
 
 /**

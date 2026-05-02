@@ -1,11 +1,16 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../shared/utils/asyncHandler.js";
-import { createStudentUser, deleteStudentByInstitute, getStudentsByInstitute, updateStudentByInstitute } from "./user.service.js";
+import {
+  createStudentUser,
+  deleteStudentByInstitute,
+  getStudentsByInstitute,
+  updateStudentByInstitute,
+} from "./user.service.js";
 import { generateUsername } from "../../shared/utils/generateUsername.js";
 import { AppError } from "../../shared/utils/AppError.js";
 import bcrypt from "bcrypt";
 import User from "./user.model.js";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { generateUniqueUsername } from "../../shared/utils/username.util.js";
 import Batch from "../batches/batch.model.js";
 import { studentCredentialsTemplate } from "../../shared/templates/studentCredentialsTemplate.js";
@@ -13,11 +18,7 @@ import { sendEmail } from "../../shared/utils/sendemail.js";
 
 export const createStudentController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
-    const {
-      name,
-      email,
-      batchId
-    } = req.body;
+    const { name, email, batchId } = req.body;
     // 🔐 Get instituteId from token (NEVER from frontend)
     const instituteId = req.user?.instituteId;
     if (!instituteId) {
@@ -29,49 +30,36 @@ export const createStudentController = asyncHandler(
 
     // 🔥 Generate username automatically
     const username = await generateUsername(name);
-    const tempPassword =
-
-      `EXAM-${Math.floor(
-
-        1000 +
-
-        Math.random() * 9000
-      )}`;
+    const tempPassword = `EXAM-${Math.floor(1000 + Math.random() * 9000)}`;
     const student = await createStudentUser(
       {
         name,
         email,
         username,
-        password:
-          tempPassword,
+        password: tempPassword,
         batchId,
       },
-      instituteId
+      instituteId,
     );
     await sendEmail(
-
       email,
 
       "Your Student Account Credentials",
 
       studentCredentialsTemplate(
-
         name,
 
         email,
 
-        tempPassword
-      )
+        tempPassword,
+      ),
     );
     res.status(201).json({
-
       success: true,
 
-      message:
-        "Student created successfully",
+      message: "Student created successfully",
 
       data: {
-
         student,
 
         username,
@@ -79,48 +67,39 @@ export const createStudentController = asyncHandler(
         tempPassword,
       },
     });
-  }
+  },
 );
 
 export const deleteStudentController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
-
     const instituteId = req.user.instituteId;
 
     const studentId = req.params.id as string;
 
-    await deleteStudentByInstitute(
-      studentId,
-      instituteId
-    );
+    await deleteStudentByInstitute(studentId, instituteId);
 
     res.status(200).json({
       success: true,
       message: "Student deleted successfully",
     });
-  }
+  },
 );
 
 export const getStudentsController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
-
     const instituteId = req.user?.instituteId;
 
-    const students = await getStudentsByInstitute(
-      instituteId
-    );
-
+    const students = await getStudentsByInstitute(instituteId);
 
     res.status(200).json({
       success: true,
       data: students,
     });
-  }
+  },
 );
 
 export const updateStudentController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
-
     const instituteId = req.user.instituteId;
 
     const studentId = req.params.id as string;
@@ -128,7 +107,7 @@ export const updateStudentController = asyncHandler(
     const student = await updateStudentByInstitute(
       studentId,
       instituteId,
-      req.body
+      req.body,
     );
 
     res.status(200).json({
@@ -136,15 +115,12 @@ export const updateStudentController = asyncHandler(
       message: "Student updated successfully",
       data: student,
     });
-  }
+  },
 );
 
 export const updateProfile = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
-
-    const user = await User.findById(
-      req.user.instituteId
-    );
+    const user = await User.findById(req.user.instituteId);
 
     if (!user) {
       throw new AppError("User not found", 404);
@@ -161,137 +137,102 @@ export const updateProfile = asyncHandler(
       message: "Profile updated",
       data: user,
     });
-  }
+  },
 );
-export const importStudentsController =
-  asyncHandler(
-    async (req: any, res) => {
+export const importStudentsController = asyncHandler(async (req: any, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "CSV file required",
+    });
+  }
 
-      if (!req.file) {
+  // ✅ Read Excel/CSV
+  const workbook = new ExcelJS.Workbook();
 
-        return res.status(400).json({
-          success: false,
-          message: "CSV file required",
-        });
-      }
+  await workbook.xlsx.load(req.file.buffer);
 
-      // ✅ Read Excel/CSV
-      const workbook = XLSX.read(
-        req.file.buffer,
-        {
-          type: "buffer",
-        }
-      );
+  const worksheet = workbook.worksheets[0];
 
-      const sheetName =
-        workbook.SheetNames[0];
+  const students: any[] = [];
 
-      const sheet =
-        workbook.Sheets[sheetName];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header
 
-      const students =
-        XLSX.utils.sheet_to_json(sheet);
+    students.push({
+      name: row.getCell(1).value,
+      email: row.getCell(2).value,
+      batchName: row.getCell(3).value,
+    });
+  });
 
-      const createdStudents = [];
+  const createdStudents = [];
 
-      for (const row of students as any[]) {
+  for (const row of students as any[]) {
+    const { name, email, batchName } = row;
 
-        const {
-          name,
-          email,
-          batchName,
-        } = row;
-
-        // ✅ Validate row
-        if (
-          !name ||
-          !email ||
-          !batchName
-        ) {
-          continue;
-        }
-
-        // ✅ Check duplicate email
-        const existing =
-          await User.findOne({ email });
-
-        if (existing) {
-          continue;
-        }
-
-        // ✅ Find batch by name
-        const batch =
-          await Batch.findOne({
-
-            name: {
-              $regex: new RegExp(
-                `^${batchName.trim()}$`,
-                "i"
-              ),
-            },
-
-            instituteId:
-              req.user.instituteId,
-          });
-
-        // ❌ Batch not found
-        if (!batch) {
-
-          console.log(
-            `Batch not found: ${batchName}`
-          );
-
-          continue;
-        }
-
-        // ✅ Generate username
-        const username =
-          await generateUniqueUsername(
-            name
-          );
-
-        // ✅ Default password
-        const tempPassword = "123456";
-
-        const hashedPassword =
-          await bcrypt.hash(
-            tempPassword,
-            10
-          );
-
-        // ✅ Create student
-        const student =
-          await User.create({
-
-            name,
-
-            email,
-
-            username,
-
-            password:
-              hashedPassword,
-
-            role: "student",
-
-            instituteId:
-              req.user.instituteId,
-
-            batchId: batch._id,
-
-            status: "active",
-          });
-
-        createdStudents.push(student);
-      }
-
-      res.json({
-        success: true,
-        message:
-          "Students imported successfully",
-
-        total:
-          createdStudents.length,
-      });
+    // ✅ Validate row
+    if (!name || !email || !batchName) {
+      continue;
     }
-  );
+
+    // ✅ Check duplicate email
+    const existing = await User.findOne({ email });
+
+    if (existing) {
+      continue;
+    }
+
+    // ✅ Find batch by name
+    const batch = await Batch.findOne({
+      name: {
+        $regex: new RegExp(`^${batchName.trim()}$`, "i"),
+      },
+
+      instituteId: req.user.instituteId,
+    });
+
+    // ❌ Batch not found
+    if (!batch) {
+      console.log(`Batch not found: ${batchName}`);
+
+      continue;
+    }
+
+    // ✅ Generate username
+    const username = await generateUniqueUsername(name);
+
+    // ✅ Default password
+    const tempPassword = "123456";
+
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // ✅ Create student
+    const student = await User.create({
+      name,
+
+      email,
+
+      username,
+
+      password: hashedPassword,
+
+      role: "student",
+
+      instituteId: req.user.instituteId,
+
+      batchId: batch._id,
+
+      status: "active",
+    });
+
+    createdStudents.push(student);
+  }
+
+  res.json({
+    success: true,
+    message: "Students imported successfully",
+
+    total: createdStudents.length,
+  });
+});

@@ -18,7 +18,7 @@ const batchSchema = new Schema<IBatch>(
 
     instituteId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // institute user
+      ref: "Institute", // 🔥 FIX: Ye pehle "User" tha, isko "Institute" karna hai
       required: true,
       index: true,
     },
