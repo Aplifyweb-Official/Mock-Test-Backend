@@ -1,12 +1,13 @@
 import User from "./user.model.js";
 
 import { AppError }
-from "../../shared/utils/AppError.js";
+  from "../../shared/utils/AppError.js";
 
 import bcrypt from "bcrypt";
 
 import {
-  createNotification
+  createNotification,
+  sendNotification
 } from "../notifications/notification.service.js";
 
 import {
@@ -21,391 +22,394 @@ import {
  * 🧑 CREATE USER
  */
 export const createUser =
-async (data: any) => {
+  async (data: any) => {
 
-  try {
+    try {
 
-    const user =
-      await User.create(data);
+      const user =
+        await User.create(data);
 
-    return user;
+      return user;
 
-  } catch (err: any) {
+    } catch (err: any) {
 
-    // ❌ DUPLICATE KEY
-    if (err.code === 11000) {
+      // ❌ DUPLICATE KEY
+      if (err.code === 11000) {
 
-      const field =
-        Object.keys(
-          err.keyPattern
-        )[0];
+        const field =
+          Object.keys(
+            err.keyPattern
+          )[0];
 
-      throw new AppError(
+        throw new AppError(
 
-        `${field} already exists`,
+          `${field} already exists`,
 
-        400
-      );
+          400
+        );
+      }
+
+      throw err;
     }
-
-    throw err;
-  }
-};
+  };
 
 /**
  * 🔍 FIND BY EMAIL
  */
 export const findUserByEmail =
-async (email: string) => {
+  async (email: string) => {
 
-  return await User.findOne({
-    email,
-  });
-};
+    return await User.findOne({
+      email,
+    });
+  };
 
 /**
  * 🔍 FIND BY USERNAME
  */
 export const findUserByUsername =
-async (username: string) => {
+  async (username: string) => {
 
-  return await User.findOne({
-    username,
-  });
-};
+    return await User.findOne({
+      username,
+    });
+  };
 
 /**
  * 🔐 FIND FOR LOGIN
  */
 export const findUserForLogin =
-async (identifier: string) => {
+  async (identifier: string) => {
 
-  return await User.findOne({
+    return await User.findOne({
 
-    $or: [
+      $or: [
 
-      {
-        email: identifier
-      },
+        {
+          email: identifier
+        },
 
-      {
-        username: identifier
-      },
-    ],
-  })
+        {
+          username: identifier
+        },
+      ],
+    })
 
-    .select("+password");
-};
+      .select("+password");
+  };
 
 /**
  * 🔍 FIND USER BY ID
  */
 export const findUserById =
-async (id: string) => {
+  async (id: string) => {
 
-  const user =
-    await User.findById(id)
+    const user =
+      await User.findById(id)
 
-      .select("-password");
+        .select("-password");
 
-  if (!user) {
+    if (!user) {
 
-    throw new AppError(
-      "User not found",
-      404
-    );
-  }
+      throw new AppError(
+        "User not found",
+        404
+      );
+    }
 
-  return user;
-};
+    return user;
+  };
 
 /**
  * 👨‍🎓 CREATE STUDENT
  */
 export const createStudentUser =
-async (
+  async (
 
-  data: {
+    data: {
 
-    name: string;
+      name: string;
 
-    email: string;
+      email: string;
 
-    username: string;
+      username: string;
 
-    password: string;
+      password: string;
 
-    batchId: string;
-  },
+      batchId: string;
+    },
 
-  instituteId: string
-) => {
+    instituteId: string
+  ) => {
 
-  try {
+    try {
 
-    // 🔐 GENERATE TEMP PASSWORD
-    const tempPassword =
+      // 🔐 GENERATE TEMP PASSWORD
+      const tempPassword =
 
-      Math.random()
+        Math.random()
 
-        .toString(36)
+          .toString(36)
 
-        .slice(-8);
+          .slice(-8);
 
-    // 🔐 HASH PASSWORD
-    const hashedPassword =
+      // 🔐 HASH PASSWORD
+      const hashedPassword =
 
-      await bcrypt.hash(
+        await bcrypt.hash(
 
-        tempPassword,
+          tempPassword,
 
-        10
-      );
+          10
+        );
 
-    // ✅ CREATE STUDENT
-    const student =
+      // ✅ CREATE STUDENT
+      const student =
 
-      await User.create({
+        await User.create({
 
-        name:
-          data.name,
+          name:
+            data.name,
 
-        email:
-          data.email,
+          email:
+            data.email,
 
-        username:
-          data.username,
+          username:
+            data.username,
 
-        password:
-          hashedPassword,
+          password:
+            hashedPassword,
 
-        batchId:
-          data.batchId,
+          batchId:
+            data.batchId,
 
-        role:
-          "student",
+          role:
+            "student",
 
-        instituteId,
+          instituteId,
 
-        status:
-          "active",
+          status:
+            "active",
 
-        mustChangePassword:
-          true,
-      });
+          mustChangePassword:
+            true,
+        });
 
-    // 🔔 FIND INSTITUTE USER
-    const instituteUser =
+      // 🔔 FIND INSTITUTE USER
+      const instituteUser =
 
-      await User.findOne({
+        await User.findOne({
 
-        instituteId,
+          instituteId,
 
-        role:
-          "institute",
-      });
+          role:
+            "institute",
+        });
 
-    // 🔔 CREATE NOTIFICATION
-    if (instituteUser) {
+      // 🔔 CREATE NOTIFICATION
+      if (instituteUser) {
 
-      await createNotification({
+        await sendNotification({
 
-        userId:
-          instituteUser._id.toString(),
+          userId:
+            instituteUser._id.toString(),
 
-        title:
-          "New Student Added",
+          title:
+            "New Student Added",
 
-        message:
-          `${data.name} has been added successfully.`,
+          message:
+            `${data.name} has been added successfully.`,
 
-        type:
-          "system",
+          type:
+            "system",
 
-        link:
-          "/institute/admin/students",
-      });
-    }
+          link:
+            "/institute/admin/students",
 
-    // 📧 SEND EMAIL
-    await sendEmail(
+          event:
+            "student_creation",
+        });
+      }
 
-      data.email,
-
-      "Your BrainMock Student Account",
-
-      studentCredentialsTemplate(
-
-        data.name,
+      // 📧 SEND EMAIL
+      await sendEmail(
 
         data.email,
 
-        tempPassword
-      )
-    );
+        "Your BrainMock Student Account",
 
-    // 🔐 REMOVE PASSWORD
-    const obj =
-      student.toObject();
+        studentCredentialsTemplate(
 
-    const {
+          data.name,
 
-      password: _p,
+          data.email,
 
-      ...safeStudent
-
-    } = obj;
-
-    return safeStudent;
-
-  } catch (err: any) {
-
-    // ❌ DUPLICATE KEY
-    if (err.code === 11000) {
-
-      const field =
-
-        Object.keys(
-          err.keyPattern
-        )[0];
-
-      throw new AppError(
-
-        `${field} already exists`,
-
-        400
+          tempPassword
+        )
       );
-    }
 
-    throw err;
-  }
-};
+      // 🔐 REMOVE PASSWORD
+      const obj =
+        student.toObject();
+
+      const {
+
+        password: _p,
+
+        ...safeStudent
+
+      } = obj;
+
+      return safeStudent;
+
+    } catch (err: any) {
+
+      // ❌ DUPLICATE KEY
+      if (err.code === 11000) {
+
+        const field =
+
+          Object.keys(
+            err.keyPattern
+          )[0];
+
+        throw new AppError(
+
+          `${field} already exists`,
+
+          400
+        );
+      }
+
+      throw err;
+    }
+  };
 
 /**
  * ❌ DELETE STUDENT
  */
 export const deleteStudentByInstitute =
-async (
+  async (
 
-  studentId: string,
+    studentId: string,
 
-  instituteId: string
-) => {
+    instituteId: string
+  ) => {
 
-  const student =
+    const student =
 
-    await User.findOne({
+      await User.findOne({
 
-      _id:
-        studentId,
+        _id:
+          studentId,
 
-      role:
-        "student",
+        role:
+          "student",
 
-      instituteId,
-    });
+        instituteId,
+      });
 
-  if (!student) {
+    if (!student) {
 
-    throw new AppError(
+      throw new AppError(
 
-      "Student not found or unauthorized",
+        "Student not found or unauthorized",
 
-      404
-    );
-  }
+        404
+      );
+    }
 
-  await student.deleteOne();
+    await student.deleteOne();
 
-  return true;
-};
+    return true;
+  };
 
 /**
  * 📋 GET STUDENTS
  */
 export const getStudentsByInstitute =
-async (
-  instituteId: string
-) => {
+  async (
+    instituteId: string
+  ) => {
 
-  return await User.find({
-
-    role:
-      "student",
-
-    instituteId,
-  })
-
-    .populate(
-      "batchId",
-      "name"
-    )
-
-    .select("-password")
-
-    .sort({
-      createdAt: -1,
-    });
-};
-
-/**
- * ✏️ UPDATE STUDENT
- */
-export const updateStudentByInstitute =
-async (
-
-  studentId: string,
-
-  instituteId: string,
-
-  data: {
-
-    name: string;
-
-    email: string;
-
-    batchId: string;
-
-    status: string;
-  }
-) => {
-
-  const student =
-
-    await User.findOne({
-
-      _id:
-        studentId,
+    return await User.find({
 
       role:
         "student",
 
       instituteId,
-    });
+    })
 
-  if (!student) {
+      .populate(
+        "batchId",
+        "name"
+      )
 
-    throw new AppError(
+      .select("-password")
 
-      "Student not found or unauthorized",
+      .sort({
+        createdAt: -1,
+      });
+  };
 
-      404
-    );
-  }
+/**
+ * ✏️ UPDATE STUDENT
+ */
+export const updateStudentByInstitute =
+  async (
 
-  student.name =
-    data.name;
+    studentId: string,
 
-  student.email =
-    data.email;
+    instituteId: string,
 
-  student.batchId =
-    data.batchId as any;
+    data: {
 
-  student.status =
-    data.status as any;
+      name: string;
 
-  await student.save();
+      email: string;
 
-  return student;
-};
+      batchId: string;
+
+      status: string;
+    }
+  ) => {
+
+    const student =
+
+      await User.findOne({
+
+        _id:
+          studentId,
+
+        role:
+          "student",
+
+        instituteId,
+      });
+
+    if (!student) {
+
+      throw new AppError(
+
+        "Student not found or unauthorized",
+
+        404
+      );
+    }
+
+    student.name =
+      data.name;
+
+    student.email =
+      data.email;
+
+    student.batchId =
+      data.batchId as any;
+
+    student.status =
+      data.status as any;
+
+    await student.save();
+
+    return student;
+  };

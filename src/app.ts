@@ -19,6 +19,7 @@ import aiRoutes from "./modules/ai-generator/ai.routes.js"; // 🔥 From HEAD
 import supportRoutes from "./modules/support/support.routes.js"; // 🔥 From main
 import contactRoutes from "./modules/contact/contact.routes.js"; // 🔥 From main
 import notificationRoutes from "./modules/notifications/notification.routes.js"; // 🔥 From main
+import notificationSettingRoutes from "./modules/notifications/notification-setting.routes.js";
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use("/api/attempts", attemptRoutes);
 app.use("/api/support", supportRoutes);   // ✅ Support Route added
 app.use("/api/contact", contactRoutes);   // ✅ Contact Route added
 app.use("/api/notifications", notificationRoutes); // ✅ Notification Route added
+app.use("/api/notification-settings", notificationSettingRoutes);
 
 /**
  * ====================================================

@@ -1,6 +1,3 @@
-import mongoose
-    from "mongoose";
-
 import Notification
     from "./notification.model.js";
 
@@ -11,10 +8,7 @@ import {
     getUserSocket
 
 } from "../../config/socket.config.js";
-
-import {
-    AppError
-} from "../../shared/utils/AppError.js";
+import { getNotificationSettings } from "./notification-setting.service.js";
 
 interface CreateNotificationInput {
 
@@ -42,19 +36,6 @@ export const createNotification =
         data:
             CreateNotificationInput
     ) => {
-
-        // ✅ VALIDATE USER ID
-        if (
-            !mongoose.Types.ObjectId.isValid(
-                data.userId
-            )
-        ) {
-
-            throw new AppError(
-                "Invalid user ID",
-                400
-            );
-        }
 
         // ✅ SAVE IN DATABASE
         const notification =
@@ -143,21 +124,18 @@ export const getUserNotifications =
 
                 .lean();
 
-        // ✅ TOTAL COUNT
-        const total =
-            await Notification.countDocuments({
+        const [total, unreadCount] =
+            await Promise.all([
 
-                userId,
-            });
+                Notification.countDocuments({
+                    userId,
+                }),
 
-        // ✅ UNREAD COUNT
-        const unreadCount =
-            await Notification.countDocuments({
-
-                userId,
-
-                isRead: false,
-            });
+                Notification.countDocuments({
+                    userId,
+                    isRead: false,
+                }),
+            ]);
 
         return {
 
@@ -196,33 +174,18 @@ export const markNotificationAsRead =
             await Notification.findOneAndUpdate(
 
                 {
-
-                    _id:
-                        notificationId,
-
+                    _id: notificationId,
                     userId,
                 },
 
                 {
-
                     isRead: true,
                 },
 
                 {
-
                     new: true,
                 }
-            );
-
-        if (!notification) {
-
-            throw new AppError(
-
-                "Notification not found",
-
-                404
-            );
-        }
+            ).lean();
 
         return notification;
     };
@@ -254,3 +217,39 @@ export const markAllNotificationsAsRead =
             success: true,
         };
     };
+
+
+export const sendNotification =
+async ({
+  userId,
+  title,
+  message,
+  type,
+  link,
+  event,
+}: any) => {
+
+  const settings =
+    await getNotificationSettings(
+      userId
+    );
+
+  // 🚀 CHECK TOGGLE
+  if (
+    event === "student_creation" &&
+    !settings.newStudentEnrollment
+  ) {
+
+    return;
+  }
+
+  // 🚀 REAL NOTIFICATION
+  return await createNotification({
+
+    userId,
+    title,
+    message,
+    type,
+    link,
+  });
+};
