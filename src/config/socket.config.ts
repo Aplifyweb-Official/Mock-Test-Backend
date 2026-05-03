@@ -6,124 +6,131 @@ let io: Server;
 
 // ✅ USER → SOCKET MAP
 const userSocketMap =
-new Map<string, string>();
+  new Map<string, string>();
 
 // 🚀 INIT SOCKET
 export const initSocket =
-(server: any) => {
+  (server: any) => {
 
-  io = new Server(server, {
+    io = new Server(server, {
 
-    cors: {
+      cors: {
 
-      origin:
-        "http://localhost:5173",
+        origin:
+          "http://localhost:5173",
 
-      credentials:
-        true,
-    },
-  });
+        credentials: true,
+      },
 
-  io.on(
+      transports: [
+        "websocket",
+        "polling"
+      ],
 
-    "connection",
+      pingTimeout: 60000,
 
-    (socket) => {
+    });
 
-      console.log(
+    io.on(
 
-        "✅ Socket connected:",
+      "connection",
 
-        socket.id
-      );
+      (socket) => {
 
-      // 🚀 REGISTER USER
-      socket.on(
+        console.log(
 
-        "register",
+          "✅ Socket connected:",
 
-        (userId: string) => {
+          socket.id
+        );
 
-          userSocketMap.set(
+        // 🚀 REGISTER USER
+        socket.on(
 
-            userId,
+          "register",
 
-            socket.id
-          );
+          (userId: string) => {
 
-          console.log(
-
-            `User registered: ${userId}`
-          );
-        }
-      );
-
-      // ❌ DISCONNECT
-      socket.on(
-
-        "disconnect",
-
-        () => {
-
-          console.log(
-
-            "❌ Socket disconnected:",
-
-            socket.id
-          );
-
-          // REMOVE USER
-          for (
-            const [
+            userSocketMap.set(
 
               userId,
 
-              socketId
-
-            ]
-
-            of userSocketMap.entries()
-          ) {
-
-            if (
-              socketId ===
               socket.id
+            );
+
+            console.log(
+
+              `User registered: ${userId}`
+            );
+          }
+        );
+
+        // ❌ DISCONNECT
+        socket.on(
+
+          "disconnect",
+
+          () => {
+
+            console.log(
+
+              "❌ Socket disconnected:",
+
+              socket.id
+            );
+
+            // REMOVE USER
+            for (
+              const [
+
+                userId,
+
+                socketId
+
+              ]
+
+              of userSocketMap.entries()
             ) {
 
-              userSocketMap.delete(
-                userId
-              );
+              if (
+                socketId ===
+                socket.id
+              ) {
 
-              break;
+                userSocketMap.delete(
+                  userId
+                );
+
+                break;
+              }
             }
           }
-        }
-      );
-    }
-  );
+        );
+      }
+    );
 
-  return io;
-};
+    return io;
+  };
 
 // ✅ GET IO INSTANCE
 export const getIO =
-() => {
+  () => {
 
-  if (!io) {
+    if (!io) {
 
-    throw new Error(
-      "Socket.io not initialized"
-    );
-  }
+      throw new Error(
+        "Socket.io not initialized"
+      );
+    }
 
-  return io;
-};
+    return io;
+  };
 
 // ✅ GET USER SOCKET
 export const getUserSocket =
-(userId: string) => {
+  (userId: string) => {
 
-  return userSocketMap.get(
-    userId
-  );
-};
+    return userSocketMap.get(
+      userId
+    );
+  };
