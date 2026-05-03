@@ -5,6 +5,7 @@ export interface ITest extends Document {
   description?: string;
   duration: number;
   totalMarks: number;
+  marksPerQuestion: number;
   negativeMarking: number;
   status: "draft" | "published";
   startDate?: Date;
@@ -33,9 +34,13 @@ const testSchema = new Schema<ITest>(
       required: true,
     },
 
-    totalMarks: {
+    totalMarks: { type: Number, required: true },
+
+    marksPerQuestion: {
+      // 👈 Naya field
       type: Number,
       required: true,
+      default: 4,
     },
 
     negativeMarking: {

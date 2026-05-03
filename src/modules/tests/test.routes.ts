@@ -14,6 +14,7 @@ import {
 } from "./test.controller.js";
 
 import { createTestSchema, updateTestSchema } from "./test.validation.js";
+import { requireActiveSubscription } from "../../middlewares/subscription.middleware.js";
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.post(
   "/",
   protect,
   authorize("institute"),
+  requireActiveSubscription, 
   validate(createTestSchema),
   createTestController,
 );
@@ -61,6 +63,7 @@ router.patch(
   "/:id",
   protect,
   authorize("institute"),
+  requireActiveSubscription,
   validate(updateTestSchema),
   updateTestController,
 );
@@ -75,6 +78,7 @@ router.patch(
   "/:id/publish-result",
   protect,
   authorize("institute"),
+  requireActiveSubscription,
   publishResultController,
 );
 

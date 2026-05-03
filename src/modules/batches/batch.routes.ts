@@ -6,6 +6,7 @@ import {
   getBatchesController,
 } from "./batch.controller.js";
 import { createBatchSchema } from "./batch.validation.js";
+import { requireActiveSubscription } from "../../middlewares/subscription.middleware.js";
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.post(
   "/",
   protect,
   authorize("institute"),
+  requireActiveSubscription,
   validate(createBatchSchema),
   createBatchController
 );

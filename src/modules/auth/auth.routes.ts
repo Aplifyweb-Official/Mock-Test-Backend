@@ -1,3 +1,5 @@
+// Baki imports ke neeche ye add kar de
+import { upload } from "../../middlewares/upload.middleware.js";
 import express from "express";
 import {
   registerInstitute,
@@ -74,7 +76,7 @@ router.patch(
   "/profile",
   protect,
   authorize("institute", "student", "super-admin"),
-
+  upload.single("profileImage"), // 📸 1. MULTER MIDDLEWARE (Image capture karega)
   async (req: any, res) => {
     const user = await User.findById(req.user.userId);
 
@@ -85,16 +87,25 @@ router.patch(
       });
     }
 
+    // 2. Update Text Data
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
     user.phone = req.body.phone || user.phone;
+
+    // 📸 3. CLOUDINARY IMAGE LOGIC
+    // Agar frontend se file aayi hai, toh upload.middleware usko Cloudinary pe daal dega 
+    // aur uska secure URL req.file.path me de dega.
+    if (req.file && req.file.path) {
+      // NOTE: Agar tere User schema me photo ka naam 'avatar' hai toh user.avatar = req.file.path karna.
+      user.profileImage = req.file.path; 
+    }
 
     await user.save();
 
     res.json({
       success: true,
-      message: "Profile updated successfully",
-      data: user,
+      message: "Profile updated successfully 🚀",
+      data: user, // 👈 Ye fresh data (with image URL) frontend ko wapas chala jayega
     });
   },
 );
