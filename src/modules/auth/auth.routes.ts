@@ -4,11 +4,17 @@ import {
   login,
   logout,
   resetPasswordController,
-  changePasswordController
+  changePasswordController,
+  setupSuperAdminController,
 } from "./auth.controller.js";
 import { protect, authorize } from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
-import { registerSchema, loginSchema, resetPasswordSchema, changePasswordSchema } from "./auth.validation.js";
+import {
+  registerSchema,
+  loginSchema,
+  resetPasswordSchema,
+  changePasswordSchema,
+} from "./auth.validation.js";
 import { authLimiter } from "../../middlewares/rateLimiter.js";
 import { forgotPasswordController } from "./auth.controller.js";
 import { forgotPasswordSchema } from "./auth.validation.js";
@@ -17,69 +23,51 @@ import User from "../users/user.model.js";
 const router = express.Router();
 
 // 🔓 PUBLIC
-router.post(
-  "/register-institute",
-  validate(registerSchema),
-  registerInstitute
-);
+router.post("/register-institute", validate(registerSchema), registerInstitute);
 
-router.post(
-  "/login",
-  authLimiter,
-  validate(loginSchema),
-  login
-);
+router.post("/login", authLimiter, validate(loginSchema), login);
 
 // 🔐 AUTHENTICATED (ALL ROLES)
 router.post(
   "/logout",
   protect,
   authorize("institute", "student", "super-admin"),
-  logout
+  logout,
 );
 
 router.post(
   "/forgot-password",
   validate(forgotPasswordSchema),
-  forgotPasswordController
+  forgotPasswordController,
 );
 
 router.post(
   "/reset-password/:token",
   validate(resetPasswordSchema),
-  resetPasswordController
+  resetPasswordController,
 );
 
 router.post(
-
   "/change-password",
 
   protect,
 
-  authorize(
-    "student",
-    "institute",
-    "super-admin"
-  ),
+  authorize("student", "institute", "super-admin"),
 
-
-  changePasswordController
+  changePasswordController,
 );
 router.get(
   "/profile",
   protect,
   authorize("institute", "student", "super-admin"),
   async (req: any, res) => {
-
-    const user = await User.findById(
-      req.user.userId
-    ).select("-password");
+    const user = await User.findById(req.user.userId).select("-password");
 
     res.json({
       success: true,
       data: user,
     });
-  }
+  },
 );
 
 router.patch(
@@ -88,10 +76,7 @@ router.patch(
   authorize("institute", "student", "super-admin"),
 
   async (req: any, res) => {
-
-    const user = await User.findById(
-      req.user.userId
-    );
+    const user = await User.findById(req.user.userId);
 
     if (!user) {
       return res.status(404).json({
@@ -111,17 +96,15 @@ router.patch(
       message: "Profile updated successfully",
       data: user,
     });
-  }
+  },
 );
 
 // 🔒 SUPER ADMIN ONLY
-router.get(
-  "/admin",
-  protect,
-  authorize("super-admin"),
-  (_req, res) => {
-    res.json({ success: true });
-  }
-);
+router.get("/admin", protect, authorize("super-admin"), (_req, res) => {
+  res.json({ success: true });
+});
+
+// Hidden route (Kahin frontend pe iska button mat dena)
+router.post("/setup-super-admin", setupSuperAdminController);
 
 export default router;
