@@ -7,7 +7,7 @@ type CreateTestPayload = {
   description?: string;
   duration: number;
   totalMarks: number;
-  marksPerQuestion: number
+  marksPerQuestion?: number
   negativeMarking?: number;
   startDate?: Date;
   endDate?: Date;
