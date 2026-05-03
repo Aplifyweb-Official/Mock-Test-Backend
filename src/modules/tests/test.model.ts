@@ -1,41 +1,22 @@
-import mongoose, {
-  Schema,
-  Document,
-} from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface ITest
-extends Document {
-
+export interface ITest extends Document {
   title: string;
-
   description?: string;
-
   duration: number;
-
   totalMarks: number;
-
+  marksPerQuestion: number;
   negativeMarking: number;
-
-  status:
-    | "draft"
-    | "published";
-
+  status: "draft" | "published";
   startDate?: Date;
-
   endDate?: Date;
-
-  instituteId:
-    mongoose.Types.ObjectId;
-
-  batchIds:
-    mongoose.Types.ObjectId[];
-
-  createdBy:
-    mongoose.Types.ObjectId;
+  instituteId: mongoose.Types.ObjectId;
+  batchIds: mongoose.Types.ObjectId[];
+  createdBy: mongoose.Types.ObjectId;
+  isResultPublished: boolean;
 }
 
-const testSchema =
-new Schema<ITest>(
+const testSchema = new Schema<ITest>(
   {
     title: {
       type: String,
@@ -53,9 +34,13 @@ new Schema<ITest>(
       required: true,
     },
 
-    totalMarks: {
+    totalMarks: { type: Number, required: true },
+
+    marksPerQuestion: {
+      // 👈 Naya field
       type: Number,
       required: true,
+      default: 4,
     },
 
     negativeMarking: {
@@ -65,12 +50,7 @@ new Schema<ITest>(
 
     status: {
       type: String,
-
-      enum: [
-        "draft",
-        "published",
-      ],
-
+      enum: ["draft", "published"],
       default: "draft",
     },
 
@@ -83,42 +63,35 @@ new Schema<ITest>(
     },
 
     instituteId: {
-      type:
-        Schema.Types.ObjectId,
-
+      type: Schema.Types.ObjectId,
       ref: "Institute",
-
       required: true,
     },
 
     batchIds: [
       {
-        type:
-          Schema.Types.ObjectId,
-
+        type: Schema.Types.ObjectId,
         ref: "Batch",
       },
     ],
 
     createdBy: {
-      type:
-        Schema.Types.ObjectId,
-
+      type: Schema.Types.ObjectId,
       ref: "User",
-
       required: true,
     },
-  },
 
+    // Baki fields ke sath isko daal de
+    isResultPublished: {
+      type: Boolean,
+      default: false,
+    },
+  },
   {
     timestamps: true,
-  }
+  },
 );
 
-const Test =
-mongoose.model<ITest>(
-  "Test",
-  testSchema
-);
+const Test = mongoose.model<ITest>("Test", testSchema);
 
 export default Test;

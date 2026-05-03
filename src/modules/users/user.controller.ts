@@ -15,7 +15,7 @@ import { generateUniqueUsername } from "../../shared/utils/username.util.js";
 import Batch from "../batches/batch.model.js";
 import { sendEmail } from "../../shared/utils/sendemail.js";
 import { studentCredentialsTemplate } from "../../shared/templates/studentCredentialsTemplate.js";
-
+import { uploadOnCloudinary } from "../../shared/utils/cloudinary.js";
 
 export const createStudentController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
@@ -33,40 +33,24 @@ export const createStudentController = asyncHandler(
     const username = await generateUsername(name);
     const tempPassword = `EXAM-${Math.floor(1000 + Math.random() * 9000)}`;
     const student = await createStudentUser(
-      {
-        name,
-        email,
-        username,
-        password: tempPassword,
-        batchId,
-      },
+      { name, email, username, password: tempPassword, batchId },
       instituteId,
     );
-    await sendEmail(
-      email,
-
-      username,
-
-      studentCredentialsTemplate(
-        name,
-
+    try {
+      // ✅ FIXED: Second argument is Subject now!
+      await sendEmail(
         email,
+        "Welcome to ExamAI - Your Login Credentials 🎓",
+        studentCredentialsTemplate(name, email, tempPassword),
+      );
+    } catch (error) {
+      console.log("Email error (User created):", error);
+    }
 
-        tempPassword,
-      ),
-    );
     res.status(201).json({
       success: true,
-
       message: "Student created successfully",
-
-      data: {
-        student,
-
-        username,
-
-        tempPassword,
-      },
+      data: { student, username, tempPassword },
     });
   },
 );
@@ -74,7 +58,6 @@ export const createStudentController = asyncHandler(
 export const deleteStudentController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
     const instituteId = req.user.instituteId;
-
     const studentId = req.params.id as string;
 
     await deleteStudentByInstitute(studentId, instituteId);
@@ -89,7 +72,6 @@ export const deleteStudentController = asyncHandler(
 export const getStudentsController = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
     const instituteId = req.user?.instituteId;
-
     const students = await getStudentsByInstitute(instituteId);
 
     res.status(200).json({
@@ -119,13 +101,12 @@ export const updateStudentController = asyncHandler(
   },
 );
 
+// ── 🏢 UPDATE INSTITUTE PROFILE ──
 export const updateProfile = asyncHandler(
   async (req: Request & { user?: any }, res: Response) => {
     const user = await User.findById(req.user.instituteId);
 
-    if (!user) {
-      throw new AppError("User not found", 404);
-    }
+    if (!user) throw new AppError("User not found", 404);
 
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
@@ -133,13 +114,41 @@ export const updateProfile = asyncHandler(
 
     await user.save();
 
+    res.json({ success: true, message: "Profile updated", data: user });
+  },
+);
+
+// ── 🎓 UPDATE STUDENT PROFILE (NEW API FOR STUDENT PORTAL) ──
+export const updateStudentProfile = asyncHandler(
+  async (req: Request & { user?: any; file?: any }, res: Response) => {
+    // req.user.userId is used assuming standard auth middleware attaches it for students
+    const student = await User.findById(req.user.userId); 
+    
+    if (!student) throw new AppError("Student not found", 404);
+
+    // Update details
+    if (req.body.name) student.name = req.body.name;
+    if (req.body.phone) student.phone = req.body.phone;
+    if (req.body.targetYear) student.targetYear = req.body.targetYear;
+
+    // 📸 Handle Cloudinary Image Upload
+    if (req.file) {
+      const cloudinaryRes = await uploadOnCloudinary(req.file.path);
+      if (cloudinaryRes && cloudinaryRes.secure_url) {
+        student.profileImage = cloudinaryRes.secure_url; // ⚠️ User model me 'profileImage: String' daal lena
+      }
+    }
+
+    await student.save();
+
     res.json({
       success: true,
-      message: "Profile updated",
-      data: user,
+      message: "Student Profile updated successfully",
+      data: student,
     });
   },
 );
+
 export const importStudentsController = asyncHandler(async (req: any, res) => {
   if (!req.file) {
     return res.status(400).json({
@@ -150,20 +159,16 @@ export const importStudentsController = asyncHandler(async (req: any, res) => {
 
   // ✅ Read Excel/CSV
   const workbook = new ExcelJS.Workbook();
-
   await workbook.xlsx.load(req.file.buffer);
-
   const worksheet = workbook.worksheets[0];
 
   const students: any[] = [];
-
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return; // skip header
-
     students.push({
-      name: row.getCell(1).value,
-      email: row.getCell(2).value,
-      batchName: row.getCell(3).value,
+     name: row.getCell(1).value?.toString() || "",
+      email: row.getCell(2).value?.toString() || "",
+      batchName: row.getCell(3).value?.toString() || "",
     });
   });
 
@@ -179,54 +184,38 @@ export const importStudentsController = asyncHandler(async (req: any, res) => {
 
     // ✅ Check duplicate email
     const existing = await User.findOne({ email });
-
     if (existing) {
       continue;
     }
 
     // ✅ Find batch by name
     const batch = await Batch.findOne({
-      name: {
-        $regex: new RegExp(`^${batchName.trim()}$`, "i"),
-      },
-
+      name: { $regex: new RegExp(`^${batchName.trim()}$`, "i") },
       instituteId: req.user.instituteId,
     });
 
     // ❌ Batch not found
     if (!batch) {
       console.log(`Batch not found: ${batchName}`);
-
       continue;
     }
 
-    // ✅ Generate username
     const username = await generateUniqueUsername(name);
-
-    // ✅ Default password
     const tempPassword = "123456";
-
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     // ✅ Create student
     const student = await User.create({
       name,
-
       email,
-
       username,
-
       password: hashedPassword,
-
       role: "student",
-
       instituteId: req.user.instituteId,
-
       batchId: batch._id,
-
       status: "active",
+      mustChangePassword: true
     });
-
     createdStudents.push(student);
   }
 

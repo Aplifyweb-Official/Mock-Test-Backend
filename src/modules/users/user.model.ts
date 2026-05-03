@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { number } from "zod";
 
 export interface IUser extends Document {
   name: string;
@@ -7,6 +6,8 @@ export interface IUser extends Document {
   email: string;
   phone: string;
   password: string;
+  profileImage: string; // ✅ Added
+  targetYear: string; // ✅ Added
   resetPasswordToken: string | null;
   resetPasswordExpires: Date | null;
   role: "student" | "institute" | "super-admin";
@@ -15,8 +16,16 @@ export interface IUser extends Document {
   status: "active" | "inactive" | "blocked";
   mustChangePassword: boolean;
   avgScore: number;
+  subscription: {
+    planName: string;
+    startDate?: Date;
+    endDate?: Date;
+    status: "active" | "expired" | "pending";
+    totalPaid: number;
+  };
   createdAt: Date;
   updatedAt: Date;
+  
 }
 
 const userSchema = new Schema<IUser>(
@@ -26,7 +35,6 @@ const userSchema = new Schema<IUser>(
       required: true,
       trim: true,
     },
-
     username: {
       type: String,
       required: true,
@@ -35,7 +43,6 @@ const userSchema = new Schema<IUser>(
       trim: true,
       index: true,
     },
-
     email: {
       type: String,
       required: true,
@@ -52,12 +59,20 @@ const userSchema = new Schema<IUser>(
       required: true,
       select: false,
     },
-
+    // ✅ NEW FIELD: For Cloudinary Image URL
+    profileImage: {
+      type: String,
+      default: "",
+    },
+    // ✅ NEW FIELD: For Target Year
+    targetYear: {
+      type: String,
+      default: "",
+    },
     resetPasswordToken: {
       type: String,
       default: null,
     },
-
     resetPasswordExpires: {
       type: Date,
       default: null,
@@ -67,7 +82,6 @@ const userSchema = new Schema<IUser>(
       enum: ["student", "institute", "super-admin"],
       required: true,
     },
-
     instituteId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Institute",
@@ -77,7 +91,6 @@ const userSchema = new Schema<IUser>(
       default: null,
       index: true,
     },
-
     batchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Batch",
@@ -92,21 +105,30 @@ const userSchema = new Schema<IUser>(
       enum: ["active", "inactive", "blocked"],
       default: "active",
     },
-
     mustChangePassword: {
-
       type: Boolean,
-
       default: false,
     },
     avgScore: {
       type: Number,
       default: 0,
     },
+    // Apne Institute ya User model me ye add kar de
+    subscription: {
+      planName: { type: String, default: "Free Trial" }, // e.g., "3 Months Plan", "1 Year Plan"
+      startDate: { type: Date },
+      endDate: { type: Date },
+      status: {
+        type: String,
+        enum: ["active", "expired", "pending"],
+        default: "pending",
+      },
+      totalPaid: { type: Number, default: 0 }, // 💰 ISSE HUM TOTAL REVENUE NIKALENGE!
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // 🔥 compound index (important for scale)

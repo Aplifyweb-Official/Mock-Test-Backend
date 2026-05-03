@@ -1,275 +1,145 @@
-import mongoose,
-{
-  Schema,
-  Document
-}
-from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAnswer {
-
-  questionId:
-    mongoose.Types.ObjectId;
-
-  selectedAnswer:
-    number | null;
-
-  isCorrect:
-    boolean;
-
-  marksObtained:
-    number;
+  questionId: mongoose.Types.ObjectId;
+  selectedAnswer: number | null;
+  isCorrect: boolean;
+  marksObtained: number;
 }
 
-export interface IExamAttempt
-extends Document {
-
-  studentId:
-    mongoose.Types.ObjectId;
-
-  instituteId:
-    mongoose.Types.ObjectId;
-
-  testId:
-    mongoose.Types.ObjectId;
-
-  answers:
-    IAnswer[];
-
-  status:
-    "in-progress" |
-    "submitted";
-
-  startedAt:
-    Date;
-
-  submittedAt?:
-    Date;
-
-  totalQuestions:
-    number;
-
-  correctAnswers:
-    number;
-
-  wrongAnswers:
-    number;
-
-  unanswered:
-    number;
-
-  score:
-    number;
-
-  percentage:
-    number;
-
-  timeSpent:
-    number;
+export interface IExamAttempt extends Document {
+  studentId: mongoose.Types.ObjectId;
+  instituteId: mongoose.Types.ObjectId;
+  testId: mongoose.Types.ObjectId;
+  answers: IAnswer[];
+  status: "in-progress" | "submitted";
+  startedAt: Date;
+  submittedAt?: Date;
+  totalQuestions: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+  unanswered: number;
+  score: number;
+  percentage: number;
+  timeSpent: number;
+  // src/modules/attempt/attempt.model.ts me ye naye fields add kar de:
+  warnings: { type: string; time: Date }[];
+  warningCount: number;
+  isAutoSubmitted: boolean;
 }
 
-const answerSchema =
-new Schema<IAnswer>({
-  
+const answerSchema = new Schema<IAnswer>({
   questionId: {
-
-    type:
-      Schema.Types.ObjectId,
-
-    ref:
-      "Question",
-
-    required:
-      true,
+    type: Schema.Types.ObjectId,
+    ref: "Question",
+    required: true,
   },
 
   selectedAnswer: {
-
-    type:
-      Number,
-
-    default:
-      null,
+    type: Number,
+    default: null,
   },
 
   isCorrect: {
-
-    type:
-      Boolean,
-
-    default:
-      false,
+    type: Boolean,
+    default: false,
   },
 
   marksObtained: {
-
-    type:
-      Number,
-
-    default:
-      0,
+    type: Number,
+    default: 0,
   },
 });
 
-const examAttemptSchema =
-new Schema<IExamAttempt>(
-{
+const examAttemptSchema = new Schema<IExamAttempt>(
+  {
+    studentId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
-  studentId: {
+    instituteId: {
+      type: Schema.Types.ObjectId,
+      ref: "Institute",
+      required: true,
+      index: true,
+    },
 
-    type:
-      Schema.Types.ObjectId,
+    testId: {
+      type: Schema.Types.ObjectId,
+      ref: "Test",
+      required: true,
+      index: true,
+    },
 
-    ref:
-      "User",
+    answers: [answerSchema],
 
-    required:
-      true,
+    status: {
+      type: String,
+      enum: ["in-progress", "submitted"],
+      default: "in-progress",
+    },
 
-    index:
-      true,
-  },
+    startedAt: {
+      type: Date,
+      default: Date.now,
+    },
 
-  instituteId: {
+    submittedAt: Date,
 
-    type:
-      Schema.Types.ObjectId,
+    totalQuestions: {
+      type: Number,
+      default: 0,
+    },
 
-    ref:
-      "Institute",
+    correctAnswers: {
+      type: Number,
+      default: 0,
+    },
 
-    required:
-      true,
+    wrongAnswers: {
+      type: Number,
+      default: 0,
+    },
 
-    index:
-      true,
-  },
+    unanswered: {
+      type: Number,
+      default: 0,
+    },
 
-  testId: {
+    score: {
+      type: Number,
+      default: 0,
+    },
 
-    type:
-      Schema.Types.ObjectId,
+    percentage: {
+      type: Number,
+      default: 0,
+    },
 
-    ref:
-      "Test",
+    timeSpent: { type: Number, default: 0 },
 
-    required:
-      true,
-
-    index:
-      true,
-  },
-
-  answers:
-    [answerSchema],
-
-  status: {
-
-    type:
-      String,
-
-    enum: [
-      "in-progress",
-      "submitted"
+    // 🔥 NEW: Anti-Cheat Schema definition
+    warnings: [
+      {
+        type: { type: String }, // e.g., "tab_switch", "screenshot_attempt"
+        time: { type: Date, default: Date.now },
+      },
     ],
-
-    default:
-      "in-progress",
+    warningCount: { type: Number, default: 0 },
+    isAutoSubmitted: { type: Boolean, default: false },
   },
-
-  startedAt: {
-
-    type:
-      Date,
-
-    default:
-      Date.now,
-  },
-
-  submittedAt:
-    Date,
-
-  totalQuestions: {
-
-    type:
-      Number,
-
-    default:
-      0,
-  },
-
-  correctAnswers: {
-
-    type:
-      Number,
-
-    default:
-      0,
-  },
-
-  wrongAnswers: {
-
-    type:
-      Number,
-
-    default:
-      0,
-  },
-
-  unanswered: {
-
-    type:
-      Number,
-
-    default:
-      0,
-  },
-
-  score: {
-
-    type:
-      Number,
-
-    default:
-      0,
-  },
-
-  percentage: {
-
-    type:
-      Number,
-
-    default:
-      0,
-  },
-
-  timeSpent: {
-
-    type:
-      Number,
-
-    default:
-      0,
-  },
-},
-{
-  timestamps: true,
-}
+  { timestamps: true },
 );
 
 // 🚀 IMPORTANT INDEX
-examAttemptSchema.index({
+examAttemptSchema.index({ studentId: 1, testId: 1 });
 
-  studentId: 1,
-
-  testId: 1,
-});
-
-const ExamAttempt =
-mongoose.model<IExamAttempt>(
-
+const ExamAttempt = mongoose.model<IExamAttempt>(
   "ExamAttempt",
-
-  examAttemptSchema
+  examAttemptSchema,
 );
 
 export default ExamAttempt;

@@ -58,7 +58,7 @@ router.get(
 
     protect,
 
-    authorize("institute"),
+    authorize("institute", "student"),
 
     getQuestionsController
 );

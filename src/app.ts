@@ -20,6 +20,7 @@ import supportRoutes from "./modules/support/support.routes.js"; // 🔥 From ma
 import contactRoutes from "./modules/contact/contact.routes.js"; // 🔥 From main
 import notificationRoutes from "./modules/notifications/notification.routes.js"; // 🔥 From main
 import notificationSettingRoutes from "./modules/notifications/notification-setting.routes.js";
+import superadminRoutes from "./modules/superadmin/superadmin.routes.js"; // 🔥 From main
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/api/support", supportRoutes);   // ✅ Support Route added
 app.use("/api/contact", contactRoutes);   // ✅ Contact Route added
 app.use("/api/notifications", notificationRoutes); // ✅ Notification Route added
 app.use("/api/notification-settings", notificationSettingRoutes);
+app.use("/api/superadmin", superadminRoutes); // ✅ Super Admin Route added
 
 /**
  * ====================================================
